@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Talking Stick Poker Arena — Dealer Rake Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-page:#0b0b16;
+    --bg-panel:#181a2c;
+    --bg-panel-alt:#1f2136;
+    --panel-border:#2e3149;
+    --ink:#eef0f5;
+    --muted:#8b8ea3;
+    --gold:#e7b84d;
+    --gold-bright:#f2cc72;
+    --coral:#d97a82;
+    --blue:#6f9bdc;
+    --green:#7fbf94;
+    --cream:#f2ead9;
+    --good:#7fbf94;
+    --bad:#e2707a;
+    --radius:14px;
+    --shadow:0 12px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% -10%, rgba(255,255,255,.04), transparent 40%),
+      radial-gradient(circle at 100% 0%, rgba(255,255,255,.03), transparent 45%),
+      var(--bg-page);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    padding:24px 14px 60px;
+  }
+  .wrap{max-width:940px;margin:0 auto;}
+  .topbar{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+    flex-wrap:wrap;margin-bottom:20px;padding:20px 26px;
+    background:var(--bg-panel);border:1.5px solid var(--panel-border);border-radius:var(--radius);
+  }
+  .brand-eyebrow{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;}
+  h1{font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,4vw,34px);margin:0;letter-spacing:.01em;text-transform:uppercase;color:var(--gold);}
+  .subtitle{color:var(--muted);font-size:13.5px;margin-top:6px;max-width:520px;line-height:1.5;}
+  .stats{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+  .chip-stat{
+    background:none;color:var(--ink);border-radius:0;width:auto;height:auto;
+    display:flex;flex-direction:column;align-items:flex-end;justify-content:center;
+    border:none;box-shadow:none;
+    font-family:'Roboto Mono',monospace;line-height:1.3;
+  }
+  .chip-stat b{font-size:20px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;}
+  .chip-stat span{font-size:11px;letter-spacing:.03em;color:var(--muted);margin-top:2px;}
+  .ref-btn, .ghost-btn{
+    background:transparent;border:1.5px solid var(--panel-border);color:var(--ink);
+    padding:9px 14px;border-radius:999px;font-size:13px;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:background .15s, border-color .15s;
+  }
+  .ref-btn:hover, .ghost-btn:hover{background:rgba(255,255,255,.05);border-color:var(--gold);}
+
+  .card{
+    background:var(--bg-panel);color:var(--ink);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:24px 26px;margin-bottom:16px;position:relative;
+    border:1.5px solid var(--panel-border);
+  }
+  .section-label{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;margin:0 0 10px;}
+  h2{font-family:'Inter',sans-serif;font-weight:800;font-size:19px;margin:0 0 4px;color:var(--gold);text-transform:uppercase;letter-spacing:.02em;}
+  p{line-height:1.55;}
+  .muted{color:var(--muted);font-size:13.5px;}
+
+  /* setup */
+  .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin:16px 0 8px;}
+  .game-pill{
+    border:2px solid transparent;border-radius:10px;padding:12px 12px;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    transition:border-color .15s, transform .1s;
+  }
+  .game-pill.selected{border-color:var(--gold);}
+  .game-pill .label{font-weight:800;font-size:14.5px;font-family:'Roboto Mono',monospace;}
+  .game-pill .full{display:block;font-weight:500;font-size:11.5px;margin-top:2px;opacity:.75;}
+  .game-pill .check{width:18px;height:18px;border-radius:5px;border:1.5px solid currentColor;opacity:.4;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:transparent;}
+  .game-pill.selected .check{background:#fff;border-color:#fff;opacity:1;color:var(--bad);}
+  .game-pill.stake-cream{background:var(--cream);color:#20211d;}
+  .game-pill.stake-coral{background:var(--coral);color:#2c1013;}
+  .game-pill.stake-blue{background:var(--blue);color:#0c1b33;}
+  .game-pill.stake-green{background:var(--green);color:#0d2417;}
+
+  .toggle-row{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    margin-top:14px;padding:13px 16px;border-radius:10px;
+    background:var(--bg-panel-alt);border:1.5px solid var(--panel-border);
+  }
+  .toggle-title{font-weight:700;font-size:14px;color:var(--ink);}
+  .toggle-sub{font-size:12px;color:var(--muted);margin-top:3px;max-width:420px;line-height:1.4;}
+  .switch{
+    flex-shrink:0;width:46px;height:26px;border-radius:999px;border:none;
+    background:#3a3d57;position:relative;cursor:pointer;padding:0;transition:background .18s;
+  }
+  .switch.on{background:var(--gold);}
+  .switch .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#e8e9f0;box-shadow:0 2px 5px rgba(0,0,0,.35);transition:left .18s;}
+  .switch.on .knob{left:23px;background:#1a1b2c;}
+
+  .primary-btn{
+    background:var(--gold);color:#241a04;border:none;border-radius:10px;
+    padding:12px 20px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+    transition:background .15s, transform .1s;box-shadow:0 6px 16px rgba(231,184,77,.25);
+  }
+  .primary-btn:hover{background:var(--gold-bright);}
+  .primary-btn:active{transform:translateY(1px);}
+  .primary-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+  .row-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px;}
+  .link-btn{background:none;border:none;color:var(--gold);text-decoration:underline;cursor:pointer;font-size:13px;padding:0;font-family:'Inter',sans-serif;}
+
+  /* ===== table scene ===== */
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .badge{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.03em;padding:5px 10px;border-radius:999px;background:var(--bg-panel-alt);border:1px solid var(--panel-border);color:var(--muted);font-weight:600;}
+  .badge.street{background:var(--gold);color:#241a04;border-color:var(--gold);}
+  .badge.floor{background:var(--bad);color:#2c1013;border-color:var(--bad);}
+
+  .table-stage{
+    position:relative;width:100%;max-width:660px;aspect-ratio:1.9/1;
+    background:var(--bg-panel-alt);
+    border-radius:50%;border:1.5px solid var(--panel-border);
+    margin:0 auto;
+  }
+  .seat{position:absolute;width:56px;text-align:center;transform:translate(-50%,-50%);transition:opacity .3s;}
+  .seat .avatar{
+    width:34px;height:34px;border-radius:50%;background:var(--bg-panel);border:2px solid var(--muted);
+    display:flex;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-weight:700;
+    color:var(--ink);margin:0 auto 3px;font-size:13px;position:relative;
+  }
+  .seat.folded{opacity:.35;}
+  .seat.folded .avatar{border-color:#4a4d66 !important;}
+  .seat .tag{font-size:8px;background:none;color:var(--gold);border-radius:4px;padding:1px 4px;font-weight:700;display:inline-block;margin-top:1px;font-family:'Roboto Mono',monospace;letter-spacing:.04em;}
+  .seat .folded-tag{font-size:8px;color:var(--muted);display:inline-block;margin-top:1px;font-family:'Roboto Mono',monospace;letter-spacing:.03em;}
+  .seat .cards{display:flex;gap:2px;justify-content:center;margin-top:3px;min-height:19px;}
+  .card-back{width:13px;height:18px;border-radius:2px;background:repeating-linear-gradient(45deg,var(--gold),var(--gold) 3px,#8a6c14 3px,#8a6c14 6px);border:1px solid rgba(0,0,0,.35);opacity:0;animation:dealIn .35s forwards;}
+  @keyframes dealIn{from{opacity:0;transform:translateY(-6px) scale(.7);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .seat .bet-tag{font-family:'Roboto Mono',monospace;font-size:9px;color:var(--gold-bright);margin-top:2px;min-height:11px;display:block;}
+
+  .pot-center{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);text-align:center;}
+  .pot-amt{font-family:'Roboto Mono',monospace;font-size:22px;font-weight:700;color:var(--gold);background:rgba(0,0,0,.35);padding:6px 15px;border-radius:10px;display:inline-block;border:1px solid var(--panel-border);}
+  .pot-sub{font-size:9px;color:var(--coral);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;font-weight:700;font-family:'Roboto Mono',monospace;}
+  .community{display:flex;gap:4px;justify-content:center;margin-top:9px;min-height:34px;}
+  .card-front{width:23px;height:32px;border-radius:3px;background:#fdfcf7;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'Inter',sans-serif;box-shadow:0 2px 5px rgba(0,0,0,.4);opacity:0;animation:dealIn .4s forwards;}
+  .card-front.red{color:#b3271f;}
+  .card-front.black{color:#1a1a1a;}
+
+  /* ===== rake question panel ===== */
+  .rake-panel{margin-top:18px;padding:18px 20px;border-radius:12px;background:var(--bg-panel-alt);border:1.5px solid var(--panel-border);}
+  .rake-panel .q-title{font-family:'Inter',sans-serif;font-weight:800;font-size:16px;color:var(--gold);margin:0 0 10px;text-transform:uppercase;letter-spacing:.02em;}
+  .input-row{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;}
+  .input-group label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  .input-group .field{display:flex;align-items:center;border:1.5px solid var(--panel-border);border-radius:8px;background:var(--bg-panel);overflow:hidden;width:110px;}
+  .input-group .field span{padding:0 10px;color:var(--muted);font-family:'Roboto Mono',monospace;}
+  .input-group input{border:none;background:transparent;padding:10px 10px 10px 0;width:100%;font-family:'Roboto Mono',monospace;font-size:16px;color:var(--ink);}
+  .input-group input:focus{outline:none;}
+  .floor-check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);margin-bottom:12px;}
+  .floor-check input{width:18px;height:18px;accent-color:var(--gold);}
+  .feedback{margin-top:12px;padding:12px 15px;border-radius:10px;font-size:13.5px;line-height:1.55;}
+  .feedback.good{background:rgba(127,191,148,.12);border:1px solid var(--good);color:var(--good);}
+  .feedback.bad{background:rgba(226,112,122,.12);border:1px solid var(--bad);color:var(--bad);}
+  .feedback .rule{font-family:'Roboto Mono',monospace;font-size:12px;background:rgba(0,0,0,.25);padding:7px 9px;border-radius:6px;margin-top:7px;color:var(--ink);}
+  .hint-text{font-size:13px;color:var(--muted);margin:0 0 4px;}
+
+  .summary-box{background:var(--bg-panel);border:1px solid var(--panel-border);border-radius:10px;padding:16px;}
+  .summary-box .total{font-family:'Roboto Mono',monospace;font-size:22px;color:var(--gold);font-weight:700;}
+
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;overflow-y:auto;}
+  .modal{background:var(--bg-panel);color:var(--ink);border-radius:16px;max-width:760px;width:100%;padding:26px 28px 28px;box-shadow:0 20px 60px rgba(0,0,0,.6);position:relative;border:1.5px solid var(--panel-border);}
+  .modal h2{margin-bottom:12px;}
+  .modal table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0 16px;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .modal th{background:var(--gold);color:#241a04;text-align:left;padding:6px 7px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;}
+  .modal td{padding:6px 7px;border-bottom:1px solid var(--panel-border);vertical-align:top;color:var(--ink);}
+  .modal tr:nth-child(even) td{background:var(--bg-panel-alt);}
+  .modal ul{font-size:12.5px;line-height:1.65;padding-left:19px;color:var(--ink);}
+  .modal-close{position:absolute;top:14px;right:14px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;}
+
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:26px;}
+
+  @media (max-width:640px){
+    body{padding:14px 8px 40px;}
+    .topbar{padding:16px 16px;gap:10px;}
+    .stats{gap:8px;}
+    .chip-stat{align-items:flex-start;}
+    .card{padding:16px 12px;}
+    .game-grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:8px;}
+    .table-stage{aspect-ratio:1.35/1;}
+    .seat{width:40px;}
+    .seat .avatar{width:26px;height:26px;font-size:10px;border-width:2px;}
+    .seat .tag, .seat .folded-tag{font-size:7px;}
+    .seat .bet-tag{font-size:8px;}
+    .card-back{width:10px;height:14px;}
+    .pot-amt{font-size:15px;padding:4px 9px;}
+    .pot-sub{font-size:8px;}
+    .card-front{width:16px;height:22px;font-size:8px;}
+    .community{gap:3px;}
+    .rake-panel{padding:14px 14px;}
+    .input-row{gap:10px;}
+    .input-group .field{width:88px;}
+    .row-actions{gap:8px;}
+    .primary-btn, .ghost-btn{padding:11px 16px;font-size:13.5px;}
+    .modal{padding:20px 16px 22px;max-height:85vh;overflow-y:auto;}
+    .modal table{font-size:10.5px;}
+    .modal th, .modal td{padding:5px 5px;}
+    .modal-backdrop{padding:20px 8px;}
+  }
+  @media (max-width:380px){
+    .seat{width:34px;}
+    .seat .avatar{width:22px;height:22px;font-size:9px;}
+    h1{font-size:22px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <a href="index.html" id="backToHubLink" style="display:inline-block;margin-bottom:8px;color:var(--gold-bright);font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.08em;text-decoration:none;">← All trainers</a>
+      <script>
+        (function(){
+          var link = document.getElementById('backToHubLink');
+          if (window.parent && window.parent !== window){
+            link.addEventListener('click', function(e){
+              e.preventDefault();
+              try { window.parent.closeTool(); } catch(err){ window.location.href = 'index.html'; }
+            });
+          }
+        })();
+      </script>
+      <p class="brand-eyebrow">Talking Stick Poker Arena</p>
+      <h1>Dealer Rake Trainer</h1>
+    </div>
+    <div class="stats" id="statsRow"></div>
+  </div>
+
+  <div id="app"></div>
+
+  <footer>Built for internal dealer training · rules sourced from the house Rake Reference chart</footer>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ============================= DATA ============================= */
+const GAMES = [
+  {id:'1_2_nlh',  label:'1/2 NLH',    full:"$1/$2 No-Limit Hold'em",   group:'NL_1_2',      betType:'NL',    sb:1, bb:2,                            stakeColor:'blue'},
+  {id:'2_2_plo',  label:'2/2 PLO',    full:"$2/$2 Pot-Limit Omaha",    group:'NL_2_3_3_5',  betType:'PL',    sb:1, bb:2, assumption:true,           stakeColor:'coral'},
+  {id:'2_3_nlh',  label:'2/3 NLH',    full:"$2/$3 No-Limit Hold'em",   group:'NL_2_3_3_5',  betType:'NL',    sb:2, bb:3,                            stakeColor:'blue'},
+  {id:'3_5_nlh',  label:'3/5 NLH',    full:"$3/$5 No-Limit Hold'em",   group:'NL_2_3_3_5',  betType:'NL',    sb:3, bb:5,                            stakeColor:'blue'},
+  {id:'3_6_limit',label:'3/6 Limit',  full:"$3/$6 Limit Hold'em",      group:'LIMIT',       betType:'LIMIT', smallBet:3, bigBet:6,  sb:1, bb:3,      stakeColor:'green', killThreshold:30},
+  {id:'4_8_limit',label:'4/8 Limit',  full:"$4/$8 Limit Hold'em",      group:'LIMIT',       betType:'LIMIT', smallBet:4, bigBet:8,  sb:2, bb:4,      stakeColor:'green', killThreshold:40},
+  {id:'8_16_limit',label:'8/16 Limit',full:"$8/$16 Limit Hold'em",     group:'LIMIT',       betType:'LIMIT', smallBet:8, bigBet:16, sb:4, bb:8,      stakeColor:'green', killThreshold:80},
+  {id:'4_8_bigo', label:'4/8 Big-O',  full:"$4/$8 Limit Big O",        group:'LIMIT',       betType:'LIMIT', smallBet:4, bigBet:8,  sb:2, bb:4,      stakeColor:'green', killThreshold:60},
+  {id:'6_12_bigo',label:'6/12 Big-O', full:"$6/$12 Limit Big O",       group:'LIMIT',       betType:'LIMIT', smallBet:6, bigBet:12, sb:3, bb:6,      stakeColor:'green', killThreshold:100},
+];
+
+/* ============================= RAKE ENGINE (unchanged rules) ============================= */
+function stepHouse(group, grossPot){
+  if (group==='LIMIT'){
+    if (grossPot < 10) return 0;
+    if (grossPot < 30) return 2;
+    return 4;
+  }
+  if (group==='NL_1_2'){
+    if (grossPot < 30) return 2;
+    return 5;
+  }
+  if (group==='NL_2_3_3_5'){
+    if (grossPot < 30) return 2;
+    return 4;
+  }
+}
+function baseHouseCap(group, headcount){
+  const tier = headcount>=7 ? '7+' : String(headcount);
+  const TABLE = {
+    LIMIT:      {'7+':4, '6':3, '5':2, '4':1, '3':null},
+    NL_1_2:     {'7+':5, '6':4, '5':3, '4':2, '3':null},
+    NL_2_3_3_5: {'7+':4, '6':4, '5':3, '4':2, '3':null},
+  };
+  return TABLE[group][tier] ?? null;
+}
+function targetHouse(group, grossPot, headcount){
+  const cap = baseHouseCap(group, headcount);
+  const mandatoryExtra = (group==='NL_2_3_3_5' && grossPot>=60) ? 1 : 0;
+  if (cap===null) return {house:null, askFloor:true, mandatoryExtra};
+  let h = Math.min(stepHouse(group, grossPot), cap);
+  h += mandatoryExtra;
+  return {house:h, askFloor:false, mandatoryExtra};
+}
+function targetJP(grossPot){ return grossPot >= 30 ? 2 : 1; }
+
+/* ============================= HAND SIMULATION ============================= */
+const NAMES = ['A','B','C','D','E','F','G','H'];
+function rnd(n){ return Math.floor(Math.random()*n); }
+function pick(arr){ return arr[rnd(arr.length)]; }
+function weightedHeadcount(){
+  const pool = [3,3,4,4,4,5,5,5,6,6,6,7,7,7,8,8,8];
+  return pick(pool);
+}
+function randomCard(){
+  const ranks=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  const suits=[{s:'♠',c:'black'},{s:'♣',c:'black'},{s:'♥',c:'red'},{s:'♦',c:'red'}];
+  const su = pick(suits);
+  return {rank:pick(ranks), suit:su.s, color:su.c};
+}
+
+// returns {seats:[{idx,name,isSB,isBB,folded,contributed}], events:[{seatIdx,text,potAfter}], finalPot}
+function simulatePreflop(game, headcount){
+  const names = NAMES.slice(0, headcount);
+  const sbIdx = headcount-2, bbIdx = headcount-1;
+  const seats = names.map((n,i)=>({idx:i, name:n, isSB:i===sbIdx, isBB:i===bbIdx, folded:false, contributed:0}));
+  const events = [];
+  let pot = 0;
+  function post(idx, amt, label){
+    seats[idx].contributed += amt; pot += amt;
+    events.push({seatIdx:idx, text:label, potAfter:pot});
+  }
+  let currentBet;
+  if (game.betType==='LIMIT'){
+    const sb=game.sb, bb=game.bb, unit=game.smallBet;
+    post(sbIdx, sb, `Player ${names[sbIdx]} (SB) posts $${sb}.`);
+    post(bbIdx, bb, `Player ${names[bbIdx]} (BB) posts $${bb}.`);
+    currentBet = bb;
+    let raises=0;
+    for (let i=0;i<headcount-2;i++){
+      const r = Math.random();
+      if (r<0.58){
+        seats[i].folded=true;
+        events.push({seatIdx:i, text:`Player ${names[i]} folds.`, potAfter:pot});
+      } else if (r<0.93 || raises>=2){
+        const add = currentBet - seats[i].contributed;
+        post(i, add, `Player ${names[i]} calls $${currentBet}.`);
+      } else {
+        raises++; currentBet += unit;
+        const add = currentBet - seats[i].contributed;
+        post(i, add, `Player ${names[i]} raises to $${currentBet}.`);
+      }
+    }
+    if (currentBet===bb && Math.random()<0.5){
+      const add = bb - seats[sbIdx].contributed;
+      post(sbIdx, add, `Player ${names[sbIdx]} (SB) completes to $${bb}.`);
+    } else if (Math.random()<0.45){
+      seats[sbIdx].folded=true;
+      events.push({seatIdx:sbIdx, text:`Player ${names[sbIdx]} (SB) folds.`, potAfter:pot});
+    } else {
+      const add = currentBet - seats[sbIdx].contributed;
+      if (add>0) post(sbIdx, add, `Player ${names[sbIdx]} (SB) calls $${currentBet}.`);
+    }
+    if (currentBet===bb){
+      events.push({seatIdx:bbIdx, text:`Player ${names[bbIdx]} (BB) checks.`, potAfter:pot});
+    } else if (Math.random()<0.25){
+      seats[bbIdx].folded=true;
+      events.push({seatIdx:bbIdx, text:`Player ${names[bbIdx]} (BB) folds.`, potAfter:pot});
+    } else {
+      const add = currentBet - seats[bbIdx].contributed;
+      post(bbIdx, add, `Player ${names[bbIdx]} (BB) calls $${currentBet}.`);
+    }
+  } else {
+    const sb=game.sb, bb=game.bb;
+    post(sbIdx, sb, `Player ${names[sbIdx]} (SB) posts $${sb}.`);
+    post(bbIdx, bb, `Player ${names[bbIdx]} (BB) posts $${bb}.`);
+    currentBet = bb;
+    let raises=0;
+    for (let i=0;i<headcount-2;i++){
+      const r = Math.random();
+      if (r<0.42){
+        seats[i].folded=true;
+        events.push({seatIdx:i, text:`Player ${names[i]} folds.`, potAfter:pot});
+      } else if (r<0.78 || raises>=2){
+        const add = currentBet - seats[i].contributed;
+        post(i, add, `Player ${names[i]} calls $${currentBet}.`);
+      } else {
+        raises++;
+        const mult = 2+rnd(3);
+        currentBet = Math.round((currentBet*mult)/bb)*bb;
+        const add = currentBet - seats[i].contributed;
+        post(i, add, `Player ${names[i]} raises to $${currentBet}.`);
+      }
+    }
+    if (currentBet===bb){
+      if (Math.random()<0.5){
+        const add = bb - seats[sbIdx].contributed;
+        post(sbIdx, add, `Player ${names[sbIdx]} (SB) completes to $${bb}.`);
+      } else {
+        seats[sbIdx].folded=true;
+        events.push({seatIdx:sbIdx, text:`Player ${names[sbIdx]} (SB) folds.`, potAfter:pot});
+      }
+    } else if (Math.random()<0.55){
+      seats[sbIdx].folded=true;
+      events.push({seatIdx:sbIdx, text:`Player ${names[sbIdx]} (SB) folds.`, potAfter:pot});
+    } else {
+      const add = currentBet - seats[sbIdx].contributed;
+      post(sbIdx, add, `Player ${names[sbIdx]} (SB) calls $${currentBet}.`);
+    }
+    if (currentBet===bb){
+      events.push({seatIdx:bbIdx, text:`Player ${names[bbIdx]} (BB) checks.`, potAfter:pot});
+    } else if (Math.random()<0.3){
+      seats[bbIdx].folded=true;
+      events.push({seatIdx:bbIdx, text:`Player ${names[bbIdx]} (BB) folds.`, potAfter:pot});
+    } else {
+      const add = currentBet - seats[bbIdx].contributed;
+      post(bbIdx, add, `Player ${names[bbIdx]} (BB) calls $${currentBet}.`);
+    }
+  }
+  return {seats, events, finalPot: pot};
+}
+
+function growPot(game, street){
+  if (game.betType==='LIMIT'){
+    const betSize = (street==='Turn'||street==='River') ? game.bigBet : game.smallBet;
+    const bettors = 2+rnd(3);
+    return betSize*bettors;
+  } else {
+    const betSize = Math.max(game.bb*3, 5);
+    const bettors = 1+rnd(2);
+    return Math.round(betSize*bettors/5)*5 + rnd(10);
+  }
+}
+
+/* ============================= SEAT LAYOUT ============================= */
+// Leaves a gap centered on the bottom of the oval (angle 90) for the dealer's own spot,
+// so no player seat ever lands where the dealer stands.
+function seatPositions(n){
+  const out=[];
+  const gap = 70;
+  const startAngle = 90 + gap/2;
+  const arcSpan = 360 - gap;
+  for(let i=0;i<n;i++){
+    const angleDeg = startAngle + (i+0.5)*(arcSpan/n);
+    const angle = angleDeg * Math.PI/180;
+    out.push({ x: 50 + 43*Math.cos(angle), y: 50 + 41*Math.sin(angle) });
+  }
+  return out;
+}
+
+/* ============================= APP STATE ============================= */
+let state = { screen:'setup', selected:new Set(GAMES.map(g=>g.id)), reducedRake:true, score:{correct:0,total:0}, streak:0, hand:null, modal:false };
+
+function newHand(){
+  const chosen = GAMES.filter(g=>state.selected.has(g.id));
+  const game = pick(chosen.length? chosen : GAMES);
+  const headcount = state.reducedRake ? weightedHeadcount() : pick([7,7,8,8]);
+  const sim = simulatePreflop(game, headcount);
+  state.hand = {
+    game, headcount,
+    seats: sim.seats,
+    grossPot: 0,
+    finalPreflopPot: sim.finalPot,
+    streetName: 'Preflop',
+    taken: {house:0, jp:0},
+    mandatoryExtraTaken: false,
+    checksLeft: 2,
+    community: [],
+    phase: 'predeal',
+    q: null,        // current question inputs/answer
+  };
+  state.screen = 'hand';
+  render();
+}
+
+/* ============================= RENDER ============================= */
+function render(){
+  renderStats();
+  const app = document.getElementById('app');
+  app.innerHTML = state.screen==='setup' ? renderSetup() : renderHand();
+  if (state.screen==='setup') bindSetup(); else bindHand();
+  renderModal();
+}
+
+function renderStats(){
+  const s = state.score;
+  const pct = s.total ? Math.round(100*s.correct/s.total) : 0;
+  document.getElementById('statsRow').innerHTML = `
+    <button class="ref-btn" id="openRef">Rake Reference</button>
+    ${state.screen==='hand' ? `<button class="ghost-btn" id="backSetup">Change games</button>`:''}
+    <div class="chip-stat"><b>${pct}%</b><span>accuracy</span></div>
+    <div class="chip-stat"><b>${state.streak}</b><span>streak</span></div>
+  `;
+  document.getElementById('openRef').onclick = ()=>{ state.modal=true; renderModal(); };
+  const back = document.getElementById('backSetup');
+  if (back) back.onclick = ()=>{ state.screen='setup'; render(); };
+}
+
+function renderSetup(){
+  const pills = GAMES.map(g=>{
+    const sel = state.selected.has(g.id);
+    return `<div class="game-pill stake-${g.stakeColor} ${sel?'selected':''}" data-id="${g.id}">
+      <div><span class="label">${g.label}</span><span class="full">${g.full}</span></div>
+      <div class="check">✓</div>
+    </div>`;
+  }).join('');
+  return `
+  <div class="card">
+    <p class="section-label">Session setup</p>
+    <h2>Pick the game to practice</h2>
+    <p class="muted">Every round seats a random number of players and deals the hand out.</p>
+    <div class="game-grid">${pills}</div>
+    <div class="toggle-row" id="reducedRakeToggle">
+      <div>
+        <div class="toggle-title">Reduced rake for short-handed tables</div>
+        <div class="toggle-sub">${state.reducedRake ? '' : 'Off — every hand seats a full 7–8 player table, so only the full rake amounts come up.'}</div>
+      </div>
+      <button class="switch ${state.reducedRake?'on':''}" id="switchBtn" role="switch" aria-checked="${state.reducedRake}"><span class="knob"></span></button>
+    </div>
+    <div class="row-actions">
+      <button class="primary-btn" id="startBtn">Take a seat &amp; deal</button>
+      <button class="link-btn" id="selectAll">Select all</button>
+      <button class="link-btn" id="selectNone">Clear</button>
+    </div>
+  </div>`;
+}
+function bindSetup(){
+  document.querySelectorAll('.game-pill').forEach(el=>{
+    el.onclick = ()=>{ const id=el.dataset.id; state.selected.has(id)?state.selected.delete(id):state.selected.add(id); render(); };
+  });
+  document.getElementById('startBtn').onclick = ()=>{ if(state.selected.size===0){alert('Pick at least one game.');return;} newHand(); };
+  document.getElementById('selectAll').onclick = ()=>{ state.selected=new Set(GAMES.map(g=>g.id)); render(); };
+  document.getElementById('selectNone').onclick = ()=>{ state.selected=new Set(); render(); };
+  document.getElementById('switchBtn').onclick = ()=>{ state.reducedRake = !state.reducedRake; render(); };
+}
+
+/* ---------- hand / table rendering ---------- */
+function renderHand(){
+  const h = state.hand, g = h.game;
+  const positions = seatPositions(h.headcount);
+
+  const showMoney = !(h.phase==='predeal' || h.phase==='dealing');
+
+  const seatsHtml = h.seats.map((seat,i)=>{
+    const pos = positions[i];
+    const showCards = (h.phase!=='predeal');
+    const cardsHtml = showCards && !seat.folded ? `<div class="cards"><div class="card-back"></div><div class="card-back"></div></div>` : `<div class="cards"></div>`;
+    const tag = seat.isSB ? '<span class="tag">SB</span>' : seat.isBB ? '<span class="tag">BB</span>' : '';
+    const foldedTag = showCards && seat.folded ? '<span class="folded-tag">folded</span>' : '';
+    const betTag = (showMoney && seat.contributed>0) ? `<span class="bet-tag">$${seat.contributed}</span>` : '<span class="bet-tag"></span>';
+    return `<div class="seat ${seat.folded?'folded':''}" style="left:${pos.x}%;top:${pos.y}%;">
+      <div class="avatar">${seat.name}</div>
+      ${tag}${foldedTag}
+      ${cardsHtml}
+      ${betTag}
+    </div>`;
+  }).join('');
+
+  const communityHtml = h.community.map(c=>`<div class="card-front ${c.color}">${c.rank}${c.suit}</div>`).join('');
+
+  const potLabel = showMoney ? 'gross pot' : 'not counted yet';
+  const potValue = showMoney ? h.grossPot : '?';
+
+  const stageHtml = `
+    <div class="table-stage">
+      ${seatsHtml}
+      <div class="pot-center">
+        <div class="pot-amt">${showMoney ? '$'+potValue : potValue}</div>
+        <div class="pot-sub">${potLabel}</div>
+        <div class="community">${communityHtml}</div>
+      </div>
+    </div>`;
+
+  const askFloorNow = baseHouseCap(g.group, h.headcount)===null;
+
+  let panelHtml = '';
+
+  if (h.phase==='predeal' || h.phase==='flop' || h.phase==='turn' || h.phase==='river'){
+    panelHtml = renderRakePanel(h, askFloorNow);
+  } else if (h.phase==='dealing'){
+    panelHtml = `<div class="rake-panel"><div class="row-actions"><button class="primary-btn" id="toFlopBtn">Deal the flop</button></div></div>`;
+  } else if (h.phase==='kill'){
+    panelHtml = renderKillPanel(h);
+  } else if (h.phase==='done'){
+    panelHtml = `<div class="rake-panel">
+        <div class="summary-box">
+          <p class="muted" style="margin:0 0 6px;">Hand complete</p>
+          <div class="total">$${h.taken.house} House &nbsp;+&nbsp; $${h.taken.jp} Jackpot</div>
+          <p class="muted" style="margin:8px 0 0;">Collected off a $${h.grossPot} pot, ${h.headcount}-handed.</p>
+        </div>
+        <div class="row-actions"><button class="primary-btn" id="nextHandBtn">Deal next hand</button></div>
+      </div>`;
+  }
+
+  return `<div class="card">
+    <div class="badge-row">
+      <span class="badge">${g.label} · ${g.full}</span>
+      <span class="badge">${h.headcount} players</span>
+      <span class="badge street">${h.phase==='kill' ? 'Kill Check' : h.streetName}</span>
+      ${askFloorNow && (h.phase==='flop'||h.phase==='turn'||h.phase==='river') ? '<span class="badge floor">Short-handed</span>' : ''}
+    </div>
+    ${stageHtml}
+    ${panelHtml}
+  </div>`;
+}
+
+// The question panel is used for every checkpoint: predeal and each street. h.q holds the
+// live state of the form; null means "not answered yet", non-null means feedback showing.
+function renderRakePanel(h, askFloorNow){
+  const isPredeal = h.phase==='predeal';
+  const title = isPredeal ? "Before the first card is dealt…" : "How much rake are you taking right now?";
+  const sub = isPredeal ? "What do you take, and where?" : (askFloorNow ? "Short-handed table — flag the floor for the House amount, and still enter any Jackpot owed." : "Enter the House and Jackpot dollars due this street.");
+
+  if (h.q && h.q.submitted){
+    const fb = h.q.feedback;
+    return `<div class="rake-panel">
+      <p class="q-title">${title}</p>
+      <div class="feedback ${fb.good?'good':'bad'}">
+        <strong>${fb.good?'Correct.':'Not quite.'}</strong>
+        <div class="rule">Jackpot: ${fb.jpExplain}</div>
+        <div class="rule">House: ${fb.houseExplain}</div>
+      </div>
+      <div class="row-actions"><button class="primary-btn" id="continueBtn">${h.nextIsDone ? 'See hand summary' : 'Continue'}</button></div>
+    </div>`;
+  }
+
+  const showAskFloor = !isPredeal && askFloorNow;
+  return `<div class="rake-panel">
+    <p class="q-title">${title}</p>
+    <p class="hint-text">${sub}</p>
+    ${showAskFloor ? `<label class="floor-check"><input type="checkbox" id="floorCheck"> I'd flag the floor for the House amount</label>` : ''}
+    <div class="input-row">
+      <div class="input-group">
+        <label>Jackpot</label>
+        <div class="field"><span>$</span><input type="number" min="0" step="1" id="jpInput" value="0"></div>
+      </div>
+      <div class="input-group">
+        <label>House</label>
+        <div class="field"><span>$</span><input type="number" min="0" step="1" id="houseInput" value="0"></div>
+      </div>
+      <button class="primary-btn" id="submitBtn">Take rake</button>
+    </div>
+  </div>`;
+}
+
+function renderKillPanel(h){
+  const k = h.kill;
+  if (h.q && h.q.submitted){
+    const fb = h.q.killFeedback;
+    return `<div class="rake-panel">
+      <p class="q-title">Kill pot check</p>
+      <div class="feedback ${fb.good?'good':'bad'}">
+        <strong>${fb.good?'Correct.':'Not quite.'}</strong>
+        <div class="rule">${fb.explain}</div>
+      </div>
+      <div class="row-actions"><button class="primary-btn" id="continueBtn">See hand summary</button></div>
+    </div>`;
+  }
+  return `<div class="rake-panel">
+    <p class="q-title">Kill pot check</p>
+    <p class="hint-text">Seat ${k.prevWinnerName} won the previous hand. Seat ${k.thisWinnerName} just won this one, for a pot of $${k.potExcludingRake} (rake already excluded). Kill trigger for this game: $${h.game.killThreshold}+.</p>
+    <div class="row-actions">
+      <button class="primary-btn" id="killYesBtn">Yes — kill the next hand</button>
+      <button class="ghost-btn" id="killNoBtn">No kill</button>
+    </div>
+  </div>`;
+}
+
+function bindHand(){
+  const h = state.hand;
+
+  if (h.phase==='predeal' || h.phase==='flop' || h.phase==='turn' || h.phase==='river'){
+    if (h.q && h.q.submitted){
+      document.getElementById('continueBtn').onclick = ()=> advanceAfterQuestion();
+    } else {
+      const floorCheck = document.getElementById('floorCheck');
+      document.getElementById('submitBtn').onclick = ()=>{
+        const houseVal = document.getElementById('houseInput').value;
+        const jpVal = document.getElementById('jpInput').value;
+        const floorChecked = floorCheck ? floorCheck.checked : false;
+        submitRake(houseVal, jpVal, floorChecked);
+      };
+    }
+  } else if (h.phase==='dealing'){
+    document.getElementById('toFlopBtn').onclick = ()=>{
+      h.grossPot = h.finalPreflopPot;
+      h.community = [randomCard(), randomCard(), randomCard()];
+      enterStreet('Flop');
+    };
+  } else if (h.phase==='kill'){
+    if (h.q && h.q.submitted){
+      document.getElementById('continueBtn').onclick = ()=>{ h.phase='done'; h.q=null; render(); };
+    } else {
+      document.getElementById('killYesBtn').onclick = ()=> submitKill(true);
+      document.getElementById('killNoBtn').onclick = ()=> submitKill(false);
+    }
+  } else if (h.phase==='done'){
+    document.getElementById('nextHandBtn').onclick = newHand;
+  }
+}
+
+/* ---------- rake logic ---------- */
+function computeStreetNeeds(){
+  const h = state.hand, g = h.game;
+  const target = targetHouse(g.group, h.grossPot, h.headcount);
+  const jpT = targetJP(h.grossPot);
+  const owedJP = Math.max(0, jpT - h.taken.jp);
+  let owedHouse = 0, askFloor = target.askFloor;
+  let mandatoryOwed = 0;
+  if (askFloor){
+    if (target.mandatoryExtra && !h.mandatoryExtraTaken) mandatoryOwed = 1;
+  } else {
+    owedHouse = Math.max(0, target.house - h.taken.house);
+  }
+  return {owedHouse, owedJP, askFloor, mandatoryOwed};
+}
+
+function enterStreet(name){
+  const h = state.hand;
+  h.streetName = name;
+  h.phase = name.toLowerCase();
+  h.q = null;
+  render();
+}
+
+function scoreAttempt(correct){
+  state.score.total++;
+  if (correct){ state.score.correct++; state.streak++; } else { state.streak=0; }
+}
+
+/* ---------- kill pot ---------- */
+// Kill pots only apply to Limit games here. A kill needs the same seat winning two hands in
+// a row AND the second win's pot (rake excluded) meeting that game's kill trigger. We can't
+// track real hand-to-hand history across independently generated tables, so each hand that
+// qualifies gets a short "previous hand" backstory to judge the call against.
+function buildKillScenario(h){
+  const nonFolded = h.seats.filter(s=>!s.folded);
+  const pool = nonFolded.length ? nonFolded : h.seats;
+  const thisWinner = pick(pool);
+  const sameWinner = Math.random() < 0.5;
+  let prevWinnerName = thisWinner.name;
+  if (!sameWinner){
+    const others = h.seats.filter(s=>s.name!==thisWinner.name);
+    if (others.length) prevWinnerName = pick(others).name;
+  }
+  const potExcludingRake = h.grossPot - h.taken.house - h.taken.jp;
+  const meetsThreshold = potExcludingRake >= h.game.killThreshold;
+  return {
+    thisWinnerName: thisWinner.name,
+    prevWinnerName,
+    sameWinner,
+    potExcludingRake,
+    correct: sameWinner && meetsThreshold,
+  };
+}
+function killExplain(sc, game){
+  if (!sc.sameWinner){
+    return `Seat ${sc.prevWinnerName} won the previous hand and Seat ${sc.thisWinnerName} won this one — different seats, so no kill regardless of pot size.`;
+  }
+  const meets = sc.potExcludingRake >= game.killThreshold;
+  return `Seat ${sc.thisWinnerName} won back-to-back. Pot excluding rake is $${sc.potExcludingRake}, and the kill trigger for this game is $${game.killThreshold}+ — so this ${meets?'DOES':'does NOT'} activate a kill.`;
+}
+function submitKill(answerYes){
+  const h = state.hand;
+  const correct = answerYes === h.kill.correct;
+  scoreAttempt(correct);
+  h.q = { submitted:true, killFeedback:{ good:correct, explain: killExplain(h.kill, h.game) } };
+  render();
+}
+
+function submitRake(houseVal, jpVal, floorChecked){
+  const h = state.hand, g = h.game;
+
+  if (h.phase==='predeal'){
+    const correct = Number(houseVal)===0 && Number(jpVal)===1;
+    scoreAttempt(correct);
+    h.taken.jp = 1; // always exactly $1, regardless of answer, so the hand can proceed
+    h.q = { submitted:true, feedback:{
+      good: correct,
+      houseExplain: 'Nothing to the House before the deal, ever.',
+      jpExplain: 'The first Jackpot dollar ($1) always comes off the Small Blind before cards are dealt.',
+    }};
+    h.nextIsDone = false;
+    render();
+    return;
+  }
+
+  const needs = computeStreetNeeds();
+  const jpTarget = targetJP(h.grossPot);
+  let houseCorrect, houseExplain;
+  if (needs.askFloor){
+    houseCorrect = floorChecked && Number(houseVal)===needs.mandatoryOwed;
+    const extraBit = needs.mandatoryOwed ? ` The mandatory $1 (pot $60+) still applies even here — that part isn't up to the floor.` : '';
+    houseExplain = `This table is 3-handed (or fewer) — the House amount is "Ask Floor," not something you calculate yourself.${extraBit}`;
+  } else {
+    houseCorrect = Number(houseVal)===needs.owedHouse;
+    houseExplain = `With ${h.headcount} players seated and a gross pot of $${h.grossPot}, the correct House pull right now is $${needs.owedHouse}.`;
+  }
+  const jpCorrect = Number(jpVal)===needs.owedJP;
+  const jpExplain = `Jackpot due right now: $${needs.owedJP} (gross pot ${jpTarget>=2?'has':'has not yet'} reached $30, running JP total is $${jpTarget}).`;
+
+  const allCorrect = houseCorrect && jpCorrect;
+  scoreAttempt(allCorrect);
+
+  // advance internal state to the true target regardless of the answer, so later streets
+  // in this hand are judged independently of any mistake here
+  const target = targetHouse(g.group, h.grossPot, h.headcount);
+  if (target.askFloor){
+    if (target.mandatoryExtra && !h.mandatoryExtraTaken){ h.taken.house += 1; h.mandatoryExtraTaken = true; }
+  } else {
+    h.taken.house = target.house;
+  }
+  h.taken.jp = jpTarget;
+
+  h.nextIsDone = (h.streetName==='River') || (h.checksLeft<=0);
+  h.q = { submitted:true, feedback:{good:allCorrect, houseExplain, jpExplain} };
+  render();
+}
+
+function advanceAfterQuestion(){
+  const h = state.hand;
+  if (h.phase==='predeal'){
+    h.phase = 'dealing';
+    h.q = null;
+    render();
+    return;
+  }
+  if (h.streetName==='Flop' && h.checksLeft>0 && Math.random()<0.5){
+    h.checksLeft--;
+    h.grossPot += growPot(h.game, 'Turn');
+    h.community.push(randomCard());
+    enterStreet('Turn');
+  } else if (h.streetName==='Turn' && h.checksLeft>0 && Math.random()<0.4){
+    h.checksLeft--;
+    h.grossPot += growPot(h.game, 'River');
+    h.community.push(randomCard());
+    enterStreet('River');
+  } else {
+    if (h.game.killThreshold!=null){
+      h.phase = 'kill';
+      h.kill = buildKillScenario(h);
+      h.q = null;
+    } else {
+      h.phase = 'done';
+      h.q = null;
+    }
+    render();
+  }
+}
+
+/* ============================= REFERENCE MODAL ============================= */
+function renderModal(){
+  const root = document.getElementById('modalRoot');
+  if (!state.modal){ root.innerHTML=''; return; }
+  root.innerHTML = `
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">×</button>
+      <p class="section-label">House reference</p>
+      <h2>Full rake by game type</h2>
+      <div class="table-scroll"><table>
+        <tr><th>Rake type</th><th>Games</th><th>JP (preflop)</th><th>Threshold 1</th><th>Threshold 2</th><th>Threshold 3</th><th>Full rake</th></tr>
+        <tr><td>Limit</td><td>3/6, 4/8, 6/12, 8/16 — Hold'em / Big O / Mix</td><td>$1</td><td>Pot reaches $10: take $2 House</td><td>Pot reaches $30: total $4 House + take 2nd JP $1</td><td>—</td><td>$4 House + $2 JP</td></tr>
+        <tr><td>No Limit</td><td>1/2 Hold'em</td><td>$1</td><td>Flop seen, pot under $30: take $2 House</td><td>Pot reaches $30+: take 2nd JP $1, total $5 House</td><td>—</td><td>$5 House + $2 JP</td></tr>
+        <tr><td>No Limit</td><td>2/3, 3/5 Hold'em / PLO</td><td>$1</td><td>Flop seen, pot under $30: take $2 House</td><td>Pot reaches $30+: take 2nd JP $1, total $4 House</td><td>Pot reaches $60+: total $5 House</td><td>$5 House + $2 JP</td></tr>
+      </table></div>
+      <h2>Reduced rake by headcount</h2>
+      <div class="table-scroll"><table>
+        <tr><th>Rake type</th><th>Games</th><th>7+ players</th><th>6</th><th>5</th><th>4</th><th>3-handed</th></tr>
+        <tr><td>Limit</td><td>3/6, 4/8, 6/12, 8/16</td><td>$4H + $2JP</td><td>$3H + $2JP</td><td>$2H + $2JP</td><td>$1H + $2JP</td><td>Ask Floor</td></tr>
+        <tr><td>No Limit</td><td>1/2 Hold'em</td><td>$5H + $2JP</td><td>$4H + $2JP</td><td>$3H + $2JP</td><td>$2H + $2JP</td><td>Ask Floor</td></tr>
+        <tr><td>No Limit</td><td>2/3, 3/5</td><td>$4H+$2JP+($1H@60+)</td><td>$4H+$2JP+($1H@60+)</td><td>$3H+$2JP+($1H@60+)</td><td>$2H+$2JP+($1H@60+)</td><td>Ask Floor</td></tr>
+      </table></div>
+      <ul>
+        <li>The 1st JP Dollar ($1) is always dropped from the Small Blind before the first card is dealt, for every game type.</li>
+        <li>"Threshold" pot amounts include the rake already taken (rake IS included in physical pot calculation).</li>
+        <li>In ANY No Limit game: as soon as a flop is seen, if the pot is under $30, take $2 to the House right away. Once the pot reaches $30 or more, take the 2nd JP dollar ($1).</li>
+        <li>Only the House rake is reduced for short-handed tables. The JP dollars ($2 total) never change, regardless of player count.</li>
+        <li>2/3 &amp; 3/5 NLH: even at a reduced/short-handed table, once the pot reaches $60 or more, ALWAYS take the additional $1 to House. This dollar is never skipped or reduced, no matter how many players are in the hand.</li>
+        <li>TIP: Reduce hand motions into the pot. Try to combine the House rake and the 2nd JP dollar into a single collection whenever possible. Once chips are placed on the rake drop, do not remove them. Only add to the total, coloring up as needed.</li>
+      </ul>
+      <h2>Kill pots (Limit games)</h2>
+      <div class="table-scroll"><table>
+        <tr><th>Game</th><th>Kill trigger (pot, rake excluded)</th></tr>
+        <tr><td>3/6 Limit</td><td>$30 or more</td></tr>
+        <tr><td>4/8 Limit</td><td>$40 or more</td></tr>
+        <tr><td>8/16 Limit</td><td>$80 or more</td></tr>
+        <tr><td>4/8 Big-O</td><td>$60 or more</td></tr>
+        <tr><td>6/12 Big-O</td><td>$100 or more</td></tr>
+      </table></div>
+      <ul>
+        <li>A kill only activates when the <em>same seat</em> wins two hands in a row, and the pot on that second win (with rake already taken out) meets the threshold above.</li>
+        <li>Rake is never counted toward the kill amount — only what the winner actually takes down.</li>
+      </ul>
+    </div>
+  </div>`;
+  document.getElementById('modalClose').onclick = ()=>{ state.modal=false; renderModal(); };
+  document.getElementById('modalBackdrop').onclick = (e)=>{ if(e.target.id==='modalBackdrop'){ state.modal=false; renderModal(); } };
+}
+
+render();
+</script>
+</body>
+</html>

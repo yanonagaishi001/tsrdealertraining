@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PLO Training — Pot Trainer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --felt-deep:#161421;
+    --felt-panel:#201d30;
+    --felt-panel-2:#1a1826;
+    --brass:#e8b23d;
+    --brass-bright:#f4c65a;
+    --brass-dim:#5a5064;
+    --cream:#f2efe9;
+    --sage:#a9a3bb;
+    --sage-dim:#726c85;
+    --chip-white:#f4f0e6;
+    --chip-white-text:#241650;
+    --chip-red:#e5566a;
+    --chip-blue:#4a90d9;
+    --chip-green:#4caf7c;
+    --bad:#e5566a;
+    --font-display:'Bebas Neue', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+    --font-body:'Inter', sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--felt-deep);
+    color:var(--cream);
+    font-family:var(--font-body);
+    min-height:100vh;
+    padding:20px 14px 60px;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;}
+
+  .nameplate{
+    border:1px solid var(--brass-dim);
+    background:linear-gradient(180deg, var(--felt-panel), var(--felt-panel-2));
+    border-radius:10px;
+    padding:18px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    box-shadow:0 2px 10px rgba(0,0,0,0.25);
+    animation:fadeDown .5s ease both;
+  }
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+
+  .brand h1{
+    font-family:var(--font-display);
+    font-size:clamp(30px,5vw,42px);
+    letter-spacing:3px;
+    margin:0;
+    color:var(--brass-bright);
+    line-height:1;
+  }
+  .brand p{
+    margin:4px 0 0;
+    font-size:12.5px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--sage);
+  }
+
+  .scoreboard{
+    font-family:var(--font-mono);
+    text-align:right;
+    border-left:1px solid var(--brass-dim);
+    padding-left:16px;
+  }
+  .scoreboard .streak{
+    font-size:22px;
+    color:var(--brass-bright);
+    font-weight:600;
+  }
+  .scoreboard .tally{
+    font-size:12px;
+    color:var(--sage-dim);
+    margin-top:2px;
+  }
+
+  .stakes-row{
+    display:flex;
+    gap:10px;
+    margin:18px 0;
+    flex-wrap:wrap;
+  }
+
+  .street-row{
+    display:flex;
+    gap:0;
+    margin:18px 0 14px;
+    width:fit-content;
+    max-width:100%;
+    border:2px solid var(--brass-dim);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .street-btn{
+    font-family:var(--font-body);
+    font-weight:700;
+    font-size:14px;
+    padding:9px 22px;
+    border:none;
+    background:transparent;
+    color:var(--sage);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .street-btn.selected{
+    background:var(--brass);
+    color:#2b1c00;
+  }
+  .street-btn:focus-visible{outline:2px solid var(--brass-bright);outline-offset:-2px;}
+
+  .settings-row{
+    display:flex;
+    gap:22px;
+    margin:0 0 18px;
+    flex-wrap:wrap;
+  }
+  .toggle{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14px;
+    color:var(--sage);
+    cursor:pointer;
+    user-select:none;
+  }
+  .toggle input{
+    position:absolute;
+    opacity:0;
+    width:0;height:0;
+  }
+  .toggle .switch{
+    position:relative;
+    width:40px;height:22px;
+    background:var(--felt-panel-2);
+    border:2px solid var(--brass-dim);
+    border-radius:999px;
+    transition:background .15s ease, border-color .15s ease;
+    flex-shrink:0;
+  }
+  .toggle .switch::after{
+    content:"";
+    position:absolute;
+    top:1px; left:1px;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--sage-dim);
+    transition:transform .18s ease, background .18s ease;
+  }
+  .toggle input:checked + .switch{
+    background:var(--brass);
+    border-color:var(--brass-bright);
+  }
+  .toggle input:checked + .switch::after{
+    transform:translateX(18px);
+    background:#2b1c00;
+  }
+  .toggle input:disabled + .switch{
+    opacity:.4;
+    cursor:not-allowed;
+  }
+  .toggle:has(input:disabled){
+    opacity:.5;
+    cursor:not-allowed;
+  }
+  .toggle input:focus-visible + .switch{
+    outline:2px solid var(--brass-bright);
+    outline-offset:2px;
+  }
+
+  .chip-btn{
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:14px;
+    padding:9px 18px 8px;
+    border-radius:10px;
+    cursor:pointer;
+    border:2px solid transparent;
+    outline-offset:3px;
+    position:relative;
+    transition:border-color .15s ease;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    line-height:1.3;
+  }
+  .chip-btn .bi{
+    font-size:10.5px;
+    font-weight:500;
+    opacity:0.72;
+    letter-spacing:.2px;
+  }
+  .chip-btn.selected{
+    border-color:var(--brass-bright);
+  }
+  .chip-btn:focus-visible{outline:2px solid var(--brass-bright);}
+
+  .table-panel{ margin-bottom:18px; }
+  .table-panel .table-frame{ max-width:520px; margin:0 auto; }
+  .answer-panel{ max-width:520px; margin:0 auto; }
+
+  .panel{
+    border:1px solid var(--brass-dim);
+    background:var(--felt-panel);
+    border-radius:10px;
+    padding:18px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  .panel h2{
+    font-family:var(--font-display);
+    letter-spacing:1.5px;
+    font-size:20px;
+    margin:0 0 12px;
+    color:var(--brass-bright);
+  }
+
+  .table-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio:16/12;
+    margin-bottom:14px;
+  }
+  .rail{
+    position:absolute;
+    inset:8% 6%;
+    border-radius:50%;
+    background:var(--felt-panel-2);
+    border:2px solid var(--brass-dim);
+  }
+
+  .seat{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:64px;
+    transition:opacity .2s ease;
+  }
+  .seat.folded{opacity:0.32;}
+  .seat .avatar-ring{
+    width:40px;height:40px;
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--felt-panel-2);
+    border:2px solid var(--sage-dim);
+    position:relative;
+  }
+  .seat.hero .avatar-ring{
+    border-color:var(--brass-bright);
+    box-shadow:0 0 0 4px rgba(232,178,61,0.25);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion:reduce){ .seat.hero .avatar-ring{animation:none;} }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 4px rgba(232,178,61,0.2);}
+    50%{box-shadow:0 0 0 6px rgba(232,178,61,0.35);}
+  }
+  .seat svg{width:24px;height:24px;}
+  .seat .label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    margin-top:4px;
+    text-align:center;
+    color:var(--cream);
+    line-height:1.2;
+  }
+  .seat .label .tag{
+    display:block;
+    font-size:9px;
+    letter-spacing:1px;
+    color:var(--brass);
+  }
+  .seat .label .tag.pot-status{
+    font-family:var(--font-display);
+    font-size:20px;
+    letter-spacing:2px;
+    color:var(--chip-red);
+    text-shadow:0 0 10px rgba(255,77,109,0.65), 0 0 2px rgba(0,0,0,0.6);
+    margin-top:2px;
+    animation:popIn .4s ease;
+  }
+  @media (prefers-reduced-motion:reduce){ .seat .label .tag.pot-status{animation:none;} }
+  @media (max-width:520px){
+    .seat{width:46px;}
+    .seat .avatar-ring{width:30px;height:30px;}
+    .seat svg{width:18px;height:18px;}
+    .seat .label{font-size:9px;}
+    .seat .label .tag.pot-status{font-size:15px;letter-spacing:1px;}
+  }
+
+  .centerpot{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+  }
+  .centerpot .coins{
+    position:relative;
+    width:30px;
+    height:30px;
+  }
+  .centerpot .coins .c{
+    position:absolute;
+    left:0;
+    width:30px;
+    height:12px;
+    border-radius:50%;
+    border:2px solid rgba(0,0,0,0.4);
+    box-shadow:0 1px 2px rgba(0,0,0,0.4);
+    background:var(--brass);
+  }
+  .centerpot .amt{
+    font-family:var(--font-mono);
+    font-size:16px;
+    font-weight:700;
+    color:var(--brass-bright);
+    background:rgba(10,30,22,0.8);
+    padding:3px 9px;
+    border-radius:5px;
+    white-space:nowrap;
+  }
+  .centerpot .caption{
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--sage);
+  }
+  @media (max-width:520px){
+    .centerpot .coins{width:22px;height:22px;}
+    .centerpot .coins .c{width:22px;height:9px;}
+    .centerpot .amt{font-size:13px;}
+  }
+
+  .chipstack{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  .chipstack .coins{
+    position:relative;
+    width:20px;
+    height:22px;
+  }
+  .chipstack .coins .c{
+    position:absolute;
+    left:0;
+    width:20px;
+    height:9px;
+    border-radius:50%;
+    border:1.5px solid rgba(0,0,0,0.4);
+    box-shadow:0 1px 1px rgba(0,0,0,0.35);
+  }
+  .chipstack .amt{
+    font-family:var(--font-mono);
+    font-size:15px;
+    font-weight:700;
+    color:var(--brass-bright);
+    background:rgba(10,30,22,0.75);
+    padding:2px 7px;
+    border-radius:4px;
+    white-space:nowrap;
+  }
+  .chipstack .pot-tag{
+    font-family:var(--font-display);
+    font-size:22px;
+    letter-spacing:2px;
+    color:var(--chip-red);
+    text-shadow:0 0 10px rgba(255,77,109,0.65), 0 0 2px rgba(0,0,0,0.6);
+    line-height:1;
+    animation:popIn .4s ease;
+    white-space:nowrap;
+  }
+  @media (prefers-reduced-motion:reduce){ .chipstack .pot-tag{animation:none;} }
+  @media (max-width:520px){
+    .chipstack .coins{width:14px;height:16px;}
+    .chipstack .coins .c{width:14px;height:6px;}
+    .chipstack .amt{font-size:12.5px;padding:2px 6px;}
+    .chipstack .pot-tag{font-size:16px;letter-spacing:1px;}
+  }
+
+  .question{
+    font-size:15.5px;
+    line-height:1.5;
+    margin-bottom:14px;
+  }
+  .question b{color:var(--brass-bright);}
+
+  .answer-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .answer-row input{
+    flex:1;
+    font-family:var(--font-mono);
+    font-size:20px;
+    padding:10px 12px;
+    border-radius:6px;
+    border:1px solid var(--brass-dim);
+    background:var(--felt-panel-2);
+    color:var(--cream);
+  }
+  .answer-row input:focus-visible{outline:2px solid var(--brass-bright);}
+  .answer-row input::placeholder{color:var(--sage-dim);}
+
+  .btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14.5px;
+    letter-spacing:.2px;
+    padding:10px 20px;
+    border-radius:8px;
+    border:none;
+    background:var(--brass);
+    color:#2b1c00;
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  .btn:hover{background:var(--brass-bright);}
+  .btn:active{background:var(--brass);}
+  .btn:focus-visible{outline:2px solid var(--cream);outline-offset:2px;}
+  .btn.secondary{
+    background:transparent;
+    color:var(--brass-bright);
+    border:1px solid var(--brass-dim);
+    box-shadow:none;
+  }
+  .btn.secondary:hover{background:rgba(232,178,61,0.12);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .feedback{
+    font-family:var(--font-mono);
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:10px;
+    min-height:22px;
+  }
+  .feedback.good{
+    color:var(--chip-green);
+    text-shadow:0 0 12px rgba(43,226,131,0.55);
+    animation:popIn .4s ease;
+  }
+  .feedback.bad{
+    color:var(--bad);
+    animation:shake .4s ease;
+  }
+  @keyframes popIn{0%{transform:scale(0.85);opacity:0;}60%{transform:scale(1.06);}100%{transform:scale(1);opacity:1;}}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-5px);}75%{transform:translateX(5px);}}
+  @media (prefers-reduced-motion:reduce){
+    .feedback.good, .feedback.bad{animation:none;}
+  }
+
+  .ticket{
+    display:none;
+    background:#faf3e4;
+    color:#20281f;
+    font-family:var(--font-mono);
+    border-radius:8px;
+    padding:18px 16px;
+    position:relative;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    animation:ticketIn .35s ease both;
+  }
+  .ticket.show{display:block;}
+  @keyframes ticketIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){ .ticket{animation:none;} }
+  .ticket h3{
+    margin:0 0 8px;
+    font-size:12.5px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    border-bottom:1px solid #d8cfb8;
+    padding-bottom:8px;
+  }
+  .ticket .line{
+    display:flex;
+    justify-content:space-between;
+    font-size:13.5px;
+    padding:3px 0;
+  }
+  .ticket .line.total{
+    border-top:1px solid #d8cfb8;
+    margin-top:6px;
+    padding-top:8px;
+    font-size:15px;
+    font-weight:700;
+  }
+  .ticket .formula{
+    font-size:12.5px;
+    color:#5c5847;
+    margin:6px 0 2px;
+  }
+
+  .bottom-actions{
+    margin-top:16px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  /* ---------- Mobile ---------- */
+  html{ overflow-x:hidden; }
+  body{ overflow-x:hidden; }
+
+  @media (max-width:600px){
+    body{ padding:14px 10px 50px; }
+
+    .nameplate{ padding:14px 16px; justify-content:flex-start; }
+    .brand h1{ font-size:28px; }
+    .scoreboard{
+      border-left:none;
+      padding-left:0;
+      text-align:left;
+      width:100%;
+      margin-top:4px;
+      padding-top:10px;
+      border-top:1px solid var(--brass-dim);
+    }
+
+    .street-row{ width:100%; }
+    .street-btn{
+      flex:1;
+      padding:9px 4px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .stakes-row{ gap:8px; }
+    .chip-btn{ padding:8px 12px 7px; font-size:12.5px; }
+    .chip-btn .bi{ font-size:9.5px; }
+
+    .settings-row{ gap:14px; }
+
+    .panel{ padding:14px; }
+    .panel h2{ font-size:17px; }
+
+    .answer-row{ flex-wrap:wrap; }
+    .answer-row input{ flex:1 1 100%; }
+    .answer-row .btn{ flex:1 1 100%; }
+
+    .btn{ padding:12px 18px; }
+
+    .bottom-actions{ flex-direction:column; }
+    .bottom-actions .btn{ width:100%; }
+
+    .question{ font-size:14.5px; }
+  }
+
+  @media (max-width:360px){
+    .street-btn{ font-size:11px; padding:8px 2px; }
+    .chip-btn{ padding:7px 9px 6px; font-size:11.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="nameplate">
+    <div class="brand">
+      <a href="index.html" id="backToHubLink" style="display:inline-block;margin-bottom:8px;color:var(--brass-bright);font-family:var(--font-mono);font-size:11px;letter-spacing:1.5px;text-decoration:none;">← All trainers</a>
+      <script>
+        (function(){
+          var link = document.getElementById('backToHubLink');
+          if (window.parent && window.parent !== window){
+            link.addEventListener('click', function(e){
+              e.preventDefault();
+              try { window.parent.closeTool(); } catch(err){ window.location.href = 'index.html'; }
+            });
+          }
+        })();
+      </script>
+      <h1>PLO TRAINING</h1>
+      <p>Pot-Limit Omaha &middot; Dealer Pot-Call Trainer</p>
+    </div>
+    <div class="scoreboard">
+      <div class="streak" id="streakVal">0 STREAK</div>
+      <div class="tally" id="tallyVal">0 / 0 correct</div>
+    </div>
+  </div>
+
+  <div class="street-row" id="streetRow">
+    <button class="street-btn selected" data-street="preflop">Preflop</button>
+    <button class="street-btn" data-street="flop">Flop</button>
+    <button class="street-btn" data-street="whole">Whole Hand</button>
+  </div>
+
+  <div class="stakes-row" id="stakesRow"></div>
+
+  <div class="settings-row">
+    <label class="toggle">
+      <input type="checkbox" id="straddleToggle">
+      <span class="switch"></span>
+      Straddle
+    </label>
+    <label class="toggle" id="dblStraddleLabel">
+      <input type="checkbox" id="doubleStraddleToggle" disabled>
+      <span class="switch"></span>
+      Double Straddle
+    </label>
+  </div>
+
+  <div class="panel table-panel">
+    <h2>THE TABLE — 8 HANDED</h2>
+    <div class="table-frame">
+      <div class="rail"></div>
+      <div id="seatLayer"></div>
+      <div id="chipLayer"></div>
+      <div id="centerPot" class="centerpot" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div class="panel answer-panel">
+    <div class="question" id="questionText"></div>
+    <div class="answer-row">
+      <input type="number" inputmode="numeric" id="answerInput" placeholder="Total amount ($)">
+      <button class="btn" id="submitBtn">Lock it in</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <div class="ticket" id="ticket">
+      <h3>Dealer's Count Slip</h3>
+      <div class="line"><span>Last bet</span><b id="tLastBet"></b></div>
+      <div class="line"><span>Trails (everything else already in)</span><b id="tTrails"></b></div>
+      <div class="formula" id="tFormula1"></div>
+      <div class="line" id="tAlreadyInRow"><span id="tAlreadyInLabel"></span><b id="tAlreadyIn"></b></div>
+      <div class="formula" id="tFormula2"></div>
+      <div class="line total"><span>The count</span><span id="tTotal"></span></div>
+      <div class="line"><span>New chips added this action</span><span id="tNewLevel"></span></div>
+    </div>
+    <div class="bottom-actions">
+      <button class="btn" id="proceedBtn" style="display:none;">Proceed to next action</button>
+      <button class="btn secondary" id="nextBtn">Deal Next Hand</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STAKES = [
+  {key:'2-2',   sb:2,  bb:2,  label:'2 / 2',   bg:'var(--chip-white)', fg:'var(--chip-white-text)', buyIn:'$100 – $500',       maxStack:1200},
+  {key:'5-5',   sb:5,  bb:5,  label:'5 / 5',   bg:'var(--chip-red)',   fg:'#fff',                    buyIn:'$300 – $1,500',     maxStack:3600},
+  {key:'10-10', sb:10, bb:10, label:'10 / 10', bg:'var(--chip-blue)',  fg:'#fff',                    buyIn:'$1,000 – $5,000',   maxStack:12000},
+  {key:'25-25', sb:25, bb:25, label:'25 / 25', bg:'var(--chip-green)', fg:'#08281a',                 buyIn:'$2,500 – no max*',  maxStack:24000},
+];
+
+let currentStake = STAKES[0];
+let currentStreet = 'preflop';
+let scenario = null;
+let correct = 0, attempts = 0, streak = 0;
+let answered = false;
+
+const stakesRow = document.getElementById('stakesRow');
+STAKES.forEach(s=>{
+  const b = document.createElement('button');
+  b.className = 'chip-btn' + (s.key===currentStake.key ? ' selected' : '');
+  b.style.background = s.bg;
+  b.style.color = s.fg;
+  b.innerHTML = `<span>${s.label} PLO</span><span class="bi">${s.buyIn}</span>`;
+  b.dataset.key = s.key;
+  b.addEventListener('click', ()=>{
+    currentStake = STAKES.find(x=>x.key===s.key);
+    [...stakesRow.children].forEach(c=>c.classList.remove('selected'));
+    b.classList.add('selected');
+    dealHand();
+  });
+  stakesRow.appendChild(b);
+});
+
+function mod8(n){ return ((n%8)+8)%8; }
+function rnd(n){ return Math.floor(Math.random()*n); }
+function pick(arr){ return arr[rnd(arr.length)]; }
+function roundNice(n){ return Math.max(1, Math.round(n)); }
+function roundToStake(n, stake){
+  if(stake.key === '2-2') return Math.max(1, Math.round(n));
+  const step = 5;
+  return Math.max(step, Math.round(n/step)*step);
+}
+
+const PERSON_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="8" r="4" fill="var(--cream)"/>
+  <path d="M4 21c0-5 3.5-8 8-8s8 3 8 8" fill="var(--cream)"/>
+</svg>`;
+
+function simulatePreflopRound(stake, opts){
+  const buttonIdx = rnd(8);
+  const sbIdx = mod8(buttonIdx+1);
+  const bbIdx = mod8(buttonIdx+2);
+  const straddleIdx = mod8(bbIdx+1);
+  const dblStraddleIdx = mod8(bbIdx+2);
+
+  const contributions = new Array(8).fill(0);
+  contributions[sbIdx] = stake.sb;
+  contributions[bbIdx] = stake.bb;
+  let pot = stake.sb + stake.bb;
+  let currentBet = stake.bb;
+  const folded = new Set();
+  const log = [];
+
+  log.push({seat:sbIdx, role:'SB', text:`posts small blind <b>$${stake.sb}</b>`, blind:true, kind:'blind', amount:stake.sb});
+  log.push({seat:bbIdx, role:'BB', text:`posts big blind <b>$${stake.bb}</b>`, blind:true, kind:'blind', amount:stake.bb});
+
+  const willStraddle = !!(opts && opts.straddle) && Math.random() < 0.65;
+  const willDblStraddle = willStraddle && !!(opts && opts.doubleStraddle) && Math.random() < 0.4;
+
+  if(willStraddle){
+    const strAmt = 2*stake.bb;
+    contributions[straddleIdx] = strAmt;
+    pot += strAmt;
+    currentBet = strAmt;
+    log.push({seat:straddleIdx, role:'STR', text:`straddles <b>$${strAmt}</b>`, blind:true, kind:'blind', amount:strAmt});
+  }
+  if(willDblStraddle){
+    const dblAmt = 4*stake.bb;
+    contributions[dblStraddleIdx] = dblAmt;
+    pot += dblAmt;
+    currentBet = dblAmt;
+    log.push({seat:dblStraddleIdx, role:'STR2', text:`double straddles <b>$${dblAmt}</b>`, blind:true, kind:'blind', amount:dblAmt});
+  }
+
+  const roleOf = (idx)=> idx===buttonIdx ? 'BTN' : idx===sbIdx ? 'SB' : idx===bbIdx ? 'BB'
+    : (willStraddle && idx===straddleIdx) ? 'STR'
+    : (willDblStraddle && idx===dblStraddleIdx) ? 'STR2' : '';
+
+  // Build acting order: everyone else first, then blinds/straddles act last, in the order they were posted
+  const lastActors = [sbIdx, bbIdx];
+  if(willStraddle) lastActors.push(straddleIdx);
+  if(willDblStraddle) lastActors.push(dblStraddleIdx);
+  const startSeat = mod8(lastActors[lastActors.length-1] + 1);
+  const order = [];
+  for(let k=0;k<8-lastActors.length;k++) order.push(mod8(startSeat+k));
+  lastActors.forEach(s=>order.push(s));
+
+  let raisesSoFar = willDblStraddle ? 2 : (willStraddle ? 1 : 0);
+  let anyPotYet = false;
+  let liveCount = 8;
+  const livePositions = new Set([0,1,2,3,4,5,6,7]);
+  let actedSince = new Set();
+  let posPointer = 0;
+  let guard = 0;
+
+  while(liveCount > 1 && guard < 60){
+    guard++;
+    const pos = posPointer % 8;
+    posPointer++;
+    if(!livePositions.has(pos)) continue;
+    if(actedSince.has(pos)) break; // action closed, back to someone who already responded
+
+    const seatIdx = order[pos];
+    const toCall = currentBet - contributions[seatIdx];
+    const canRaise = raisesSoFar < 3;
+    const wouldClose = (actedSince.size + 1) >= liveCount;
+    let action;
+    let forcedPot = false;
+
+    if(toCall===0){
+      action = (canRaise && Math.random()<0.35) ? 'raise' : 'check';
+    } else if(anyPotYet){
+      // Facing a pot-sized bet: strongly favor calling it or re-potting, rarely folding
+      const r = Math.random();
+      if(r < 0.12) action = 'fold';
+      else if(!canRaise || r < 0.72) action = 'call';
+      else action = 'raise';
+    } else {
+      const r = Math.random();
+      if(r < 0.38) action = 'fold';
+      else if(!canRaise || r < 0.85) action = 'call';
+      else action = 'raise';
+    }
+    if(!anyPotYet){
+      const handWouldEnd = (action==='fold' && (liveCount-1 <= 1));
+      const roundWouldCloseWithNoBet = (action!=='raise' && wouldClose);
+      if(handWouldEnd || roundWouldCloseWithNoBet){
+        action = 'raise';
+        forcedPot = true;
+      }
+    }
+
+    if(action==='fold'){
+      folded.add(seatIdx);
+      livePositions.delete(pos); liveCount--;
+      actedSince.add(pos);
+      log.push({seat:seatIdx, role:roleOf(seatIdx), text:'folds', kind:'fold', amount:null});
+    } else if(action==='check'){
+      actedSince.add(pos);
+      log.push({seat:seatIdx, role:roleOf(seatIdx), text:'checks', kind:'check', amount:null});
+    } else if(action==='call'){
+      actedSince.add(pos);
+      contributions[seatIdx] += toCall;
+      pot += toCall;
+      log.push({seat:seatIdx, role:roleOf(seatIdx), text:`calls <b>$${toCall}</b>`, kind:'call', amount:contributions[seatIdx]});
+    } else {
+      const alreadyInBefore = contributions[seatIdx];
+      const lastBetBefore = currentBet;
+      const potBeforeThis = pot;
+      const callPart = toCall;
+      const maxTotal = potBeforeThis + 2*callPart;
+      const minTotal = callPart + stake.bb;
+      const stackCeiling = stake.maxStack - alreadyInBefore;
+      const effectiveMax = forcedPot ? maxTotal : Math.min(maxTotal, Math.max(stackCeiling, minTotal));
+      const factor = forcedPot ? 1 : (anyPotYet ? pick([0.75, 1, 1, 1]) : pick([0.5, 0.66, 0.75, 1, 1]));
+      let totalPutIn = roundToStake(factor*effectiveMax, stake);
+      if(totalPutIn < minTotal) totalPutIn = minTotal;
+      if(totalPutIn > effectiveMax) totalPutIn = effectiveMax;
+      const potted = totalPutIn === maxTotal;
+      if(potted) anyPotYet = true;
+      contributions[seatIdx] += totalPutIn;
+      pot += totalPutIn;
+      currentBet = contributions[seatIdx];
+      raisesSoFar++;
+      actedSince = new Set([pos]);
+
+      const entry = {seat:seatIdx, role:roleOf(seatIdx), text:`raises to <b>$${currentBet}</b>`, kind:'raise', amount:contributions[seatIdx], potted};
+      if(potted){
+        const callHeroThis = lastBetBefore - alreadyInBefore;
+        entry.quiz = true;
+        entry.callHero = callHeroThis;
+        entry.potBeforeHero = potBeforeThis;
+        entry.lastBet = lastBetBefore;
+        entry.alreadyIn = alreadyInBefore;
+        entry.trails = potBeforeThis - lastBetBefore - alreadyInBefore;
+        entry.correctPutIn = alreadyInBefore + totalPutIn;
+        entry.newMoneyThisAction = totalPutIn;
+      }
+      log.push(entry);
+    }
+  }
+
+  return {
+    buttonIdx, sbIdx, bbIdx, straddleIdx, dblStraddleIdx, willStraddle, willDblStraddle,
+    log, contributions, folded, pot, roleOf
+  };
+}
+
+function generateScenario(stake, opts){
+  const r = simulatePreflopRound(stake, opts);
+  return {
+    stake, buttonIdx:r.buttonIdx, sbIdx:r.sbIdx, bbIdx:r.bbIdx, straddleIdx:r.straddleIdx, dblStraddleIdx:r.dblStraddleIdx,
+    willStraddle:r.willStraddle, willDblStraddle:r.willDblStraddle,
+    log:r.log, contributions:r.contributions, folded:r.folded, roleOf:r.roleOf
+  };
+}
+
+function simulateStreet(stake, order, startingPot, roleOf, forceGuarantee, priorStreetsUsed){
+  if(forceGuarantee === undefined) forceGuarantee = true;
+  if(!priorStreetsUsed) priorStreetsUsed = new Array(8).fill(0);
+  const contributions = new Array(8).fill(0);
+  let pot = startingPot;
+  let currentBet = 0;
+  const folded = new Set();
+  const log = [];
+
+  let raisesSoFar = 0;
+  let anyPotYet = false;
+  let liveCount = order.length;
+  const livePositions = new Set(order.map((_,i)=>i));
+  let actedSince = new Set();
+  let posPointer = 0;
+  let guard = 0;
+  const N = order.length;
+
+  while(liveCount > 1 && guard < 60){
+    guard++;
+    const pos = posPointer % N;
+    posPointer++;
+    if(!livePositions.has(pos)) continue;
+    if(actedSince.has(pos)) break;
+
+    const seatIdx = order[pos];
+    const toCall = currentBet - contributions[seatIdx];
+    const canRaise = raisesSoFar < 3;
+    const wouldClose = (actedSince.size + 1) >= liveCount;
+    let action;
+    let forcedPot = false;
+
+    if(toCall===0){
+      action = (canRaise && Math.random()<0.45) ? 'raise' : 'check';
+    } else if(anyPotYet){
+      const r = Math.random();
+      if(r < 0.12) action = 'fold';
+      else if(!canRaise || r < 0.72) action = 'call';
+      else action = 'raise';
+    } else {
+      const r = Math.random();
+      if(r < 0.35) action = 'fold';
+      else if(!canRaise || r < 0.82) action = 'call';
+      else action = 'raise';
+    }
+    if(forceGuarantee && !anyPotYet){
+      const handWouldEnd = (action==='fold' && (liveCount-1 <= 1));
+      const roundWouldCloseWithNoBet = (action!=='raise' && wouldClose);
+      if(handWouldEnd || roundWouldCloseWithNoBet){
+        action = 'raise';
+        forcedPot = true;
+      }
+    }
+
+    if(action==='fold'){
+      folded.add(seatIdx);
+      livePositions.delete(pos); liveCount--;
+      actedSince.add(pos);
+      log.push({seat:seatIdx, role:roleOf(seatIdx), text:'folds', kind:'fold', amount:null});
+    } else if(action==='check'){
+      actedSince.add(pos);
+      log.push({seat:seatIdx, role:roleOf(seatIdx), text:'checks', kind:'check', amount:null});
+    } else if(action==='call'){
+      actedSince.add(pos);
+      contributions[seatIdx] += toCall;
+      pot += toCall;
+      log.push({seat:seatIdx, role:roleOf(seatIdx), text:`calls <b>$${toCall}</b>`, kind:'call', amount:contributions[seatIdx]});
+    } else {
+      const alreadyInBefore = contributions[seatIdx];
+      const lastBetBefore = currentBet;
+      const potBeforeThis = pot;
+      const callPart = toCall;
+      const maxTotal = potBeforeThis + 2*callPart;
+      const minTotal = callPart + stake.bb;
+      const totalCommittedSoFar = alreadyInBefore + priorStreetsUsed[seatIdx];
+      const stackCeiling = stake.maxStack - totalCommittedSoFar;
+      const effectiveMax = forcedPot ? maxTotal : Math.min(maxTotal, Math.max(stackCeiling, minTotal));
+      const factor = forcedPot ? 1 : (anyPotYet ? pick([0.75, 1, 1, 1]) : pick([0.33, 0.5, 0.66, 0.75, 1]));
+      let totalPutIn = roundToStake(factor*effectiveMax, stake);
+      if(totalPutIn < minTotal) totalPutIn = minTotal;
+      if(totalPutIn > effectiveMax) totalPutIn = effectiveMax;
+      const potted = totalPutIn === maxTotal;
+      if(potted) anyPotYet = true;
+      contributions[seatIdx] += totalPutIn;
+      pot += totalPutIn;
+      currentBet = contributions[seatIdx];
+      raisesSoFar++;
+      actedSince = new Set([pos]);
+      const verb = alreadyInBefore===0 && lastBetBefore===0 ? 'bets' : 'raises to';
+
+      const entry = {seat:seatIdx, role:roleOf(seatIdx), text:`${verb} <b>$${currentBet}</b>`, kind:'raise', amount:contributions[seatIdx], potted};
+      if(potted){
+        const callHeroThis = lastBetBefore - alreadyInBefore;
+        entry.quiz = true;
+        entry.callHero = callHeroThis;
+        entry.potBeforeHero = potBeforeThis;
+        entry.lastBet = lastBetBefore;
+        entry.alreadyIn = alreadyInBefore;
+        entry.trails = potBeforeThis - lastBetBefore - alreadyInBefore;
+        entry.correctPutIn = alreadyInBefore + totalPutIn;
+        entry.newMoneyThisAction = totalPutIn;
+      }
+      log.push(entry);
+    }
+  }
+
+  return { log, contributions, folded, pot };
+}
+
+function generateFlopScenario(stake){
+  const buttonIdx = rnd(8);
+  const numSawFlop = 2 + rnd(4); // 2..5 players saw the flop
+  const liveSet = new Set();
+  while(liveSet.size < numSawFlop) liveSet.add(rnd(8));
+  const preflopFolded = new Set();
+  for(let i=0;i<8;i++) if(!liveSet.has(i)) preflopFolded.add(i);
+
+  // action order: position order starting left of the button, restricted to live seats
+  const order = [];
+  for(let k=1;k<=8;k++){
+    const seat = mod8(buttonIdx+k);
+    if(liveSet.has(seat)) order.push(seat);
+  }
+
+  const carryoverPot = roundToStake(stake.bb * (4 + rnd(20)), stake);
+  const roleOf = (idx)=> idx===buttonIdx ? 'BTN' : '';
+  const lead = [{info:true, text:`&rarr; The pot carries <b>$${carryoverPot}</b> to the flop. ${numSawFlop} players are still in the hand.`}];
+  const res = simulateStreet(stake, order, carryoverPot, roleOf);
+
+  return {
+    stake, buttonIdx, street:'flop', carryoverPot, preflopFolded,
+    log: lead.concat(res.log), contributions: res.contributions, folded: res.folded, roleOf
+  };
+}
+
+function generateWholeHandScenario(stake, opts){
+  const pre = simulatePreflopRound(stake, opts);
+  let combinedLog = pre.log.slice();
+  const cumulativeFolded = new Set(pre.folded);
+  let liveSeats = [];
+  for(let i=0;i<8;i++) if(!cumulativeFolded.has(i)) liveSeats.push(i);
+  let pot = pre.pot;
+  const stackUsed = pre.contributions.slice();
+
+  const streetNames = ['FLOP','TURN','RIVER'];
+  for(const name of streetNames){
+    if(liveSeats.length <= 1) break;
+    const order = [];
+    for(let k=1;k<=8;k++){
+      const seat = mod8(pre.buttonIdx+k);
+      if(liveSeats.includes(seat)) order.push(seat);
+    }
+    combinedLog.push({info:true, street:true, streetName:name, potTotal:pot, text:name});
+    const res = simulateStreet(stake, order, pot, pre.roleOf, false, stackUsed);
+    combinedLog = combinedLog.concat(res.log);
+    res.folded.forEach(s=>cumulativeFolded.add(s));
+    liveSeats = liveSeats.filter(s=>!res.folded.has(s));
+    pot = res.pot;
+    for(let i=0;i<8;i++) stackUsed[i] += res.contributions[i];
+  }
+
+  return {
+    stake, buttonIdx:pre.buttonIdx, sbIdx:pre.sbIdx, bbIdx:pre.bbIdx, straddleIdx:pre.straddleIdx, dblStraddleIdx:pre.dblStraddleIdx,
+    willStraddle:pre.willStraddle, willDblStraddle:pre.willDblStraddle,
+    log: combinedLog, folded: cumulativeFolded, roleOf: pre.roleOf
+  };
+}
+
+function seatPos(i, rx, ry){
+  const angle = (-90 + i*45) * Math.PI/180;
+  return { x: 50 + rx*Math.cos(angle), y: 50 + ry*Math.sin(angle) };
+}
+
+function chipColorFor(stake){
+  const map = {'2-2':'#f4f0e6','5-5':'#ff4d6d','10-10':'#2f8fff','25-25':'#2be283'};
+  return map[stake.key] || '#ffcc33';
+}
+
+let seatDivBySeat = {};
+let chipDivBySeat = {};
+let dealTimer = null;
+let currentSkip = null;
+let currentQuiz = null;
+let pendingResumeSeatDiv = null;
+let pendingResumeIdx = null;
+
+function renderSeatsBase(sc){
+  const layer = document.getElementById('seatLayer');
+  layer.innerHTML = '';
+  seatDivBySeat = {};
+  for(let i=0;i<8;i++){
+    const {x,y} = seatPos(i, 43, 38);
+    const div = document.createElement('div');
+    div.className = 'seat';
+    div.style.left = x+'%';
+    div.style.top = y+'%';
+    const role = sc.roleOf(i);
+    div.innerHTML = `
+      <div class="avatar-ring">${PERSON_SVG}</div>
+      <div class="label">Seat ${i+1}${role?`<span class="tag">${role}</span>`:''}<span class="tag status"></span></div>
+    `;
+    layer.appendChild(div);
+    seatDivBySeat[i] = div;
+    if(sc.preflopFolded && sc.preflopFolded.has(i)){
+      div.classList.add('folded');
+      div.querySelector('.status').textContent = 'folded pre-flop';
+    }
+  }
+}
+
+function showCenterPot(amount){
+  const el = document.getElementById('centerPot');
+  el.style.display = 'flex';
+  const color = document.documentElement.style.getPropertyValue('--brass') || '#ffcc33';
+  el.innerHTML = `<div class="coins"><div class="c" style="bottom:0px;"></div><div class="c" style="bottom:7px;"></div><div class="c" style="bottom:14px;"></div></div><div class="amt">$${amount}</div><div class="caption">carried to the flop</div>`;
+}
+
+function hideCenterPot(){
+  document.getElementById('centerPot').style.display = 'none';
+  document.getElementById('centerPot').innerHTML = '';
+}
+
+function upsertChip(sc, seatIdx, amount, potted){
+  const color = chipColorFor(sc.stake);
+  if(chipDivBySeat[seatIdx]){
+    const div = chipDivBySeat[seatIdx];
+    div.querySelector('.amt').textContent = `$${amount}`;
+    setPotTag(div, potted);
+    return;
+  }
+  const {x,y} = seatPos(seatIdx, 25, 22);
+  const div = document.createElement('div');
+  div.className = 'chipstack';
+  div.style.left = x+'%';
+  div.style.top = y+'%';
+  const coinCount = Math.min(4, 1 + Math.floor(Math.random()*3));
+  let coinsHtml = '';
+  for(let c=0;c<coinCount;c++){
+    coinsHtml += `<div class="c" style="bottom:${c*6}px;background:${color};"></div>`;
+  }
+  div.innerHTML = `<div class="coins">${coinsHtml}</div><div class="amt">$${amount}</div>`;
+  document.getElementById('chipLayer').appendChild(div);
+  chipDivBySeat[seatIdx] = div;
+  setPotTag(div, potted);
+}
+
+function setPotTag(div, potted){
+  let tag = div.querySelector('.pot-tag');
+  if(potted && !tag){
+    tag = document.createElement('div');
+    tag.className = 'pot-tag';
+    tag.textContent = 'POT';
+    div.appendChild(tag);
+  }
+}
+
+function revealQuizChip(sc, q){
+  const seatIdx = q.seat;
+  let div = chipDivBySeat[seatIdx];
+  if(!div){
+    const color = chipColorFor(sc.stake);
+    const {x,y} = seatPos(seatIdx, 25, 22);
+    div = document.createElement('div');
+    div.className = 'chipstack';
+    div.style.left = x+'%';
+    div.style.top = y+'%';
+    const coinCount = Math.min(4, 1 + Math.floor(Math.random()*3));
+    let coinsHtml = '';
+    for(let c=0;c<coinCount;c++){
+      coinsHtml += `<div class="c" style="bottom:${c*6}px;background:${color};"></div>`;
+    }
+    div.innerHTML = `<div class="coins">${coinsHtml}</div>`;
+    document.getElementById('chipLayer').appendChild(div);
+    chipDivBySeat[seatIdx] = div;
+  }
+  const existingAmt = div.querySelector('.amt');
+  if(existingAmt) existingAmt.remove();
+  const existingTag = div.querySelector('.pot-tag');
+  if(existingTag) existingTag.remove();
+  setTimeout(()=>{
+    const amt = document.createElement('div');
+    amt.className = 'amt';
+    amt.textContent = `$${q.correctPutIn}`;
+    div.appendChild(amt);
+  }, 600);
+}
+
+function applyEntryVisual(sc, entry){
+  if(entry.info) return;
+  const seatDiv = seatDivBySeat[entry.seat];
+  if(entry.kind === 'fold'){
+    seatDiv.classList.add('folded');
+    seatDiv.querySelector('.status').textContent = 'folded';
+  }
+  if(entry.amount != null){
+    upsertChip(sc, entry.seat, entry.amount, !!entry.potted);
+  }
+}
+
+function applyStreetTransition(sc, entry){
+  chipDivBySeat = {};
+  document.getElementById('chipLayer').innerHTML = '';
+  showCenterPot(entry.potTotal);
+  document.getElementById('questionText').innerHTML = `<b style="font-family:var(--font-display);font-size:28px;letter-spacing:3px;color:var(--brass-bright);">${entry.streetName}</b>`;
+}
+
+function animateDeal(sc, startIdx){
+  let idx = startIdx || 0;
+  function doStep(){
+    if(idx >= sc.log.length){ handComplete(sc); return; }
+    const entry = sc.log[idx];
+    if(entry.quiz){
+      presentQuiz(sc, entry, idx);
+      return;
+    }
+    if(entry.street){
+      applyStreetTransition(sc, entry);
+      idx++;
+      dealTimer = setTimeout(()=>{
+        document.getElementById('questionText').innerHTML = `Dealing the hand&hellip; <button id="skipBtn" class="btn secondary" style="padding:5px 12px;font-size:12px;margin-left:6px;">Skip ahead</button>`;
+        doStep();
+      }, 1100);
+      return;
+    }
+    applyEntryVisual(sc, entry);
+    idx++;
+    dealTimer = setTimeout(doStep, 520 + Math.floor(Math.random()*260));
+  }
+  currentSkip = ()=>{
+    clearTimeout(dealTimer);
+    while(idx < sc.log.length){
+      const entry = sc.log[idx];
+      if(entry.quiz){
+        presentQuiz(sc, entry, idx);
+        return;
+      }
+      if(entry.street){
+        applyStreetTransition(sc, entry);
+        idx++;
+        continue;
+      }
+      applyEntryVisual(sc, entry);
+      idx++;
+    }
+    handComplete(sc);
+  };
+  dealTimer = setTimeout(doStep, 450);
+}
+
+function presentQuiz(sc, entry, idx){
+  currentSkip = null;
+  currentQuiz = entry;
+  currentQuiz._resumeIdx = idx + 1;
+  answered = false;
+  const seatDiv = seatDivBySeat[entry.seat];
+  seatDiv.classList.add('hero');
+  const statusEl = seatDiv.querySelector('.status');
+  statusEl.textContent = 'POT';
+  statusEl.classList.add('pot-status');
+  document.getElementById('questionText').innerHTML = `<b>What's the pot size bet?</b>`;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('ticket').classList.remove('show');
+  document.getElementById('proceedBtn').style.display = 'none';
+  document.getElementById('answerInput').value = '';
+  document.getElementById('answerInput').disabled = false;
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('answerInput').focus();
+}
+
+function handComplete(sc){
+  currentSkip = null;
+  currentQuiz = null;
+  document.getElementById('questionText').innerHTML = `<b>Hand complete.</b>`;
+  document.getElementById('answerInput').disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+}
+
+document.getElementById('questionText').addEventListener('click', (e)=>{
+  if(e.target && e.target.id === 'skipBtn' && currentSkip) currentSkip();
+});
+
+function dealHand(){
+  if(dealTimer) clearTimeout(dealTimer);
+  currentSkip = null;
+  currentQuiz = null;
+  pendingResumeSeatDiv = null;
+  pendingResumeIdx = null;
+  document.getElementById('proceedBtn').style.display = 'none';
+  if(currentStreet === 'flop'){
+    scenario = generateFlopScenario(currentStake);
+  } else if(currentStreet === 'whole'){
+    const straddleOn = document.getElementById('straddleToggle').checked;
+    const dblStraddleOn = document.getElementById('doubleStraddleToggle').checked;
+    scenario = generateWholeHandScenario(currentStake, {straddle:straddleOn, doubleStraddle:dblStraddleOn});
+  } else {
+    const straddleOn = document.getElementById('straddleToggle').checked;
+    const dblStraddleOn = document.getElementById('doubleStraddleToggle').checked;
+    scenario = generateScenario(currentStake, {straddle:straddleOn, doubleStraddle:dblStraddleOn});
+  }
+  answered = false;
+  chipDivBySeat = {};
+  document.getElementById('chipLayer').innerHTML = '';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('ticket').classList.remove('show');
+  document.getElementById('answerInput').value = '';
+  document.getElementById('answerInput').disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+  renderSeatsBase(scenario);
+  if(scenario.carryoverPot){
+    showCenterPot(scenario.carryoverPot);
+  } else {
+    hideCenterPot();
+  }
+  let leadCount = 0;
+  for(const entry of scenario.log){
+    if(entry.kind !== 'blind' && !entry.info) break;
+    applyEntryVisual(scenario, entry);
+    leadCount++;
+  }
+  document.getElementById('questionText').innerHTML = `Dealing the hand&hellip; <button id="skipBtn" class="btn secondary" style="padding:5px 12px;font-size:12px;margin-left:6px;">Skip ahead</button>`;
+  animateDeal(scenario, leadCount);
+}
+
+function submitAnswer(){
+  if(answered || !currentQuiz) return;
+  const val = parseInt(document.getElementById('answerInput').value, 10);
+  if(isNaN(val)) return;
+  const q = currentQuiz;
+  answered = true;
+  attempts++;
+  const fb = document.getElementById('feedback');
+  if(val === q.correctPutIn){
+    correct++; streak++;
+    fb.textContent = `Correct — the count is $${q.correctPutIn}! 🎉`;
+    fb.className = 'feedback good';
+  } else {
+    streak = 0;
+    fb.textContent = `Not quite. The count is $${q.correctPutIn} — here's the math.`;
+    fb.className = 'feedback bad';
+  }
+  revealQuizChip(scenario, q);
+  if(q.callHero === 0){
+    document.getElementById('tLastBet').parentElement.style.display = 'none';
+    document.getElementById('tTrails').parentElement.style.display = 'none';
+    document.getElementById('tAlreadyInRow').style.display = 'none';
+    if(q.alreadyIn > 0){
+      document.getElementById('tFormula1').textContent = `No one's bet more than what you already have in — the count is the pot plus what's already yours:`;
+      document.getElementById('tFormula2').textContent = `$${q.potBeforeHero} + $${q.alreadyIn} = $${q.correctPutIn}`;
+    } else {
+      document.getElementById('tFormula1').textContent = `No call needed — the count is simply the pot.`;
+      document.getElementById('tFormula2').textContent = '';
+    }
+  } else {
+    document.getElementById('tLastBet').parentElement.style.display = 'flex';
+    document.getElementById('tTrails').parentElement.style.display = 'flex';
+    document.getElementById('tAlreadyInRow').style.display = 'none';
+    document.getElementById('tLastBet').textContent = `$${q.lastBet}`;
+    document.getElementById('tTrails').textContent = `$${q.trails}`;
+    document.getElementById('tFormula1').textContent = `3 × $${q.lastBet} + $${q.trails} = $${q.correctPutIn}`;
+    document.getElementById('tFormula2').textContent = '';
+  }
+  document.getElementById('tTotal').textContent = `$${q.correctPutIn}`;
+  document.getElementById('tNewLevel').textContent = `$${q.newMoneyThisAction}`;
+  document.getElementById('ticket').classList.add('show');
+  document.getElementById('answerInput').disabled = true;
+  document.getElementById('submitBtn').disabled = true;
+  updateScoreboard();
+
+  pendingResumeSeatDiv = seatDivBySeat[q.seat];
+  pendingResumeIdx = q._resumeIdx;
+  document.getElementById('proceedBtn').style.display = 'inline-block';
+}
+
+function proceedToNextAction(){
+  if(!pendingResumeSeatDiv) return;
+  const seatDiv = pendingResumeSeatDiv;
+  const resumeIdx = pendingResumeIdx;
+  pendingResumeSeatDiv = null;
+  pendingResumeIdx = null;
+  document.getElementById('proceedBtn').style.display = 'none';
+  seatDiv.classList.remove('hero');
+  const statusEl = seatDiv.querySelector('.status');
+  statusEl.classList.remove('pot-status');
+  statusEl.textContent = '';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('ticket').classList.remove('show');
+  currentQuiz = null;
+  const hasMoreQuizzes = scenario.log.slice(resumeIdx).some(e=>e.quiz);
+  if(hasMoreQuizzes){
+    document.getElementById('questionText').innerHTML = `Dealing the hand&hellip; <button id="skipBtn" class="btn secondary" style="padding:5px 12px;font-size:12px;margin-left:6px;">Skip ahead</button>`;
+    animateDeal(scenario, resumeIdx);
+  } else {
+    handComplete(scenario);
+  }
+}
+
+function updateScoreboard(){
+  document.getElementById('streakVal').textContent = streak>=3 ? `🔥 ${streak} STREAK` : `${streak} STREAK`;
+  document.getElementById('tallyVal').textContent = `${correct} / ${attempts} correct`;
+}
+
+document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+document.getElementById('answerInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter') submitAnswer();
+});
+document.getElementById('nextBtn').addEventListener('click', dealHand);
+document.getElementById('proceedBtn').addEventListener('click', proceedToNextAction);
+
+document.getElementById('straddleToggle').addEventListener('change', (e)=>{
+  const dbl = document.getElementById('doubleStraddleToggle');
+  dbl.disabled = !e.target.checked;
+  if(!e.target.checked) dbl.checked = false;
+  dealHand();
+});
+document.getElementById('doubleStraddleToggle').addEventListener('change', dealHand);
+
+document.querySelectorAll('.street-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    currentStreet = btn.dataset.street;
+    document.querySelectorAll('.street-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const straddleToggle = document.getElementById('straddleToggle');
+    const dblStraddleToggle = document.getElementById('doubleStraddleToggle');
+    if(currentStreet === 'flop'){
+      straddleToggle.disabled = true;
+      dblStraddleToggle.disabled = true;
+    } else {
+      straddleToggle.disabled = false;
+      dblStraddleToggle.disabled = !straddleToggle.checked;
+    }
+    dealHand();
+  });
+});
+
+dealHand();
+</script>
+</body>
+</html>

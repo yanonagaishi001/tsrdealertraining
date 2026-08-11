@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Big-O Hand Reader — Dealer Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0c211f;
+    --bg-panel:#123330;
+    --bg-panel-alt:#0f2b28;
+    --line:#25534d;
+    --cream:#f3ecd9;
+    --cream-dim:#b9c9c3;
+    --brass:#c98a3c;
+    --brass-bright:#e0a755;
+    --good:#6fbf8f;
+    --bad:#d97a7a;
+    --ink:#12211f;
+    --radius:14px;
+    --shadow:0 14px 34px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% -10%, rgba(255,255,255,.05), transparent 40%),
+      radial-gradient(circle at 100% 10%, rgba(255,255,255,.04), transparent 45%),
+      var(--bg-deep);
+    color:var(--cream);
+    font-family:'Inter',system-ui,sans-serif;
+    padding:28px 16px 60px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+  .topbar{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;
+    margin-bottom:20px;padding:22px 26px;background:var(--bg-panel);border:1.5px solid var(--line);border-radius:var(--radius);
+  }
+  .eyebrow{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass-bright);margin:0 0 6px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(24px,4vw,34px);margin:0;color:var(--cream);}
+  .subtitle{color:var(--cream-dim);font-size:13.5px;margin-top:6px;max-width:480px;line-height:1.5;}
+  .stats{display:flex;gap:22px;align-items:center;}
+  .stat{display:flex;flex-direction:column;align-items:flex-end;font-family:'Roboto Mono',monospace;}
+  .stat b{font-size:21px;color:var(--brass-bright);font-weight:700;}
+  .stat span{font-size:10px;letter-spacing:.05em;color:var(--cream-dim);text-transform:uppercase;margin-top:2px;}
+
+  .card{background:var(--bg-panel);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px 28px;margin-bottom:16px;}
+  .section-label{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-bright);font-weight:600;margin:0 0 10px;}
+  h2{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin:0 0 6px;color:var(--cream);}
+  p{line-height:1.6;}
+  .muted{color:var(--cream-dim);font-size:13.5px;}
+  .primary-btn{
+    background:var(--brass);color:#241704;border:none;border-radius:10px;padding:12px 22px;
+    font-size:14.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;
+    transition:background .15s, transform .1s;box-shadow:0 6px 16px rgba(201,138,60,.3);
+  }
+  .primary-btn:hover{background:var(--brass-bright);}
+  .primary-btn:active{transform:translateY(1px);}
+  .primary-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;}
+  .ghost-btn{background:transparent;border:1.5px solid var(--line);color:var(--cream);padding:11px 20px;border-radius:10px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .ghost-btn:hover{border-color:var(--brass);}
+  .row-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px;}
+
+  /* ===== table ===== */
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .badge{font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.03em;padding:5px 10px;border-radius:999px;background:var(--bg-panel-alt);border:1px solid var(--line);color:var(--cream-dim);font-weight:600;}
+  .badge.accent{background:var(--brass);color:#241704;border-color:var(--brass);}
+
+  .table-stage{
+    position:relative;width:100%;max-width:900px;aspect-ratio:2.1/1;
+    background:var(--bg-panel-alt);border-radius:50%;border:1.5px solid var(--line);
+    margin:0 auto 20px;
+  }
+  .seat{position:absolute;width:155px;text-align:center;transform:translate(-50%,-50%);transition:opacity .25s;}
+  .seat .avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--bg-panel);border:2px solid var(--cream-dim);
+    display:flex;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-weight:700;
+    color:var(--cream);margin:0 auto 6px;font-size:12px;
+  }
+  .seat.active .avatar{border-color:var(--brass-bright);box-shadow:0 0 0 4px rgba(224,167,85,.28);}
+  .seat.done .avatar{border-color:var(--good);}
+  .seat-cards{display:flex;flex-wrap:nowrap;justify-content:center;gap:2px;width:auto;margin:0 auto;}
+  .seat-tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+
+  .board-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;}
+  .board-label{font-family:'Roboto Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--cream-dim);margin-bottom:6px;}
+  .board-row{display:flex;gap:5px;}
+
+  .pcard{
+    width:44px;height:62px;border-radius:6px;background:#fdfcf6;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:700;
+    box-shadow:0 3px 8px rgba(0,0,0,.35);border:2px solid transparent;position:relative;flex-shrink:0;
+    transition:transform .12s, border-color .15s, box-shadow .15s;
+  }
+  .pcard .rank{font-size:15px;line-height:1;}
+  .pcard .suit{font-size:13px;line-height:1;margin-top:2px;}
+  .pcard.red{color:#b3271f;}
+  .pcard.black{color:#1a1a1a;}
+  .pcard.board{width:40px;height:56px;opacity:.92;}
+  .pcard.seat{width:27px;height:38px;}
+  .pcard.seat .rank{font-size:11px;}
+  .pcard.seat .suit{font-size:9px;}
+  .pcard.selectable{cursor:pointer;}
+  .pcard.selectable:hover{transform:translateY(-6px) scale(1.18);box-shadow:0 10px 18px rgba(0,0,0,.5);z-index:20;}
+  .pcard.selected{border-color:var(--brass);box-shadow:0 0 0 3px rgba(201,138,60,.35), 0 6px 14px rgba(0,0,0,.4);transform:translateY(-6px);}
+  .pcard.dim{opacity:.4;}
+  .pcard.truth{box-shadow:0 0 0 3px var(--brass-bright), 0 6px 14px rgba(0,0,0,.4);}
+
+  .active-hand-label{font-family:'Roboto Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass-bright);margin-bottom:8px;font-weight:700;}
+  .hole-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .seat-row{padding:14px 0;border-bottom:1px solid var(--line);border-radius:8px;transition:background .15s;}
+  .seat-row:hover{background:rgba(255,255,255,.03);}
+  .seat-row:first-child{padding-top:0;}
+  .seat-row:last-child{border-bottom:none;}
+  .seat-pick-btn{
+    background:transparent;border:1.5px solid var(--line);color:var(--cream);padding:6px 10px;border-radius:7px;
+    font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;margin-top:7px;transition:all .15s;white-space:nowrap;
+  }
+  .seat-pick-btn:hover{border-color:var(--brass);}
+  .seat-pick-btn.picked{background:var(--brass);border-color:var(--brass);color:#241704;}
+  .seat-pick-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .tag-ok{display:inline-block;margin-top:7px;font-size:11px;font-weight:700;color:var(--good);font-family:'Roboto Mono',monospace;}
+  .tag-bad{display:inline-block;margin-top:7px;font-size:11px;font-weight:700;color:var(--bad);font-family:'Roboto Mono',monospace;}
+
+  .step-panel{margin-top:18px;padding:18px 20px;border-radius:12px;background:var(--bg-panel-alt);border:1.5px solid var(--line);}
+  .step-title{font-family:'Fraunces',serif;font-weight:600;font-size:17px;color:var(--brass-bright);margin:0 0 6px;}
+  .hint-text{font-size:13px;color:var(--cream-dim);margin:0 0 14px;}
+  .step-sub{font-size:13px;color:var(--cream-dim);margin:0 0 14px;}
+  .pick-count{font-family:'Roboto Mono',monospace;font-size:12px;color:var(--cream-dim);margin-top:10px;}
+
+  .feedback{margin-top:14px;padding:14px 16px;border-radius:10px;font-size:13.5px;line-height:1.6;}
+  .feedback.good{background:rgba(111,191,143,.12);border:1px solid var(--good);color:var(--good);}
+  .feedback.bad{background:rgba(217,122,122,.12);border:1px solid var(--bad);color:var(--bad);}
+  .feedback .detail{font-family:'Roboto Mono',monospace;font-size:12px;background:rgba(0,0,0,.25);padding:8px 10px;border-radius:6px;margin-top:8px;color:var(--cream);}
+
+  .summary-box{background:var(--bg-panel-alt);border:1px solid var(--line);border-radius:10px;padding:16px;}
+  .summary-box .total{font-family:'Roboto Mono',monospace;font-size:22px;color:var(--brass-bright);font-weight:700;}
+  .summary-list{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:1.9;margin-top:10px;}
+
+  footer{text-align:center;color:var(--cream-dim);font-size:12px;margin-top:26px;opacity:.7;}
+
+  @media (max-width:640px){
+    .card{padding:18px 16px;}
+    .table-stage{aspect-ratio:1.3/1;}
+    .seat{width:106px;}
+    .seat-cards{gap:1.5px;}
+    .pcard.seat{width:18px;height:25px;}
+    .pcard.seat .rank{font-size:8px;}
+    .pcard.seat .suit{font-size:6.5px;}
+    .pcard{width:38px;height:54px;}
+    .pcard .rank{font-size:13px;}
+    .pcard .suit{font-size:11px;}
+    .pcard.board{width:32px;height:46px;}
+    .seat-pick-btn{font-size:9.5px;padding:5px 7px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <a href="index.html" id="backToHubLink" style="display:inline-block;margin-bottom:8px;color:var(--brass-bright);font-family:'Roboto Mono',monospace;font-size:11px;letter-spacing:.08em;text-decoration:none;">← All trainers</a>
+      <script>
+        (function(){
+          var link = document.getElementById('backToHubLink');
+          if (window.parent && window.parent !== window){
+            link.addEventListener('click', function(e){
+              e.preventDefault();
+              try { window.parent.closeTool(); } catch(err){ window.location.href = 'index.html'; }
+            });
+          }
+        })();
+      </script>
+      <p class="eyebrow">Dealer Training</p>
+      <h1>Big-O Hand Reader</h1>
+      <p class="subtitle">Click the 2 cards that make the winning High — then the winning Low, if there is one.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="statAccuracy">0%</b><span>accuracy</span></div>
+      <div class="stat"><b id="statStreak">0</b><span>streak</span></div>
+    </div>
+  </div>
+  <div id="app"></div>
+  <footer>5-card Big-O · best hand uses exactly 2 hole cards + 3 board cards, high and low judged separately</footer>
+</div>
+
+<script>
+/* ============================================================
+   CARD + EVALUATOR ENGINE (unchanged from the tested single-hand version)
+   ============================================================ */
+const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+const RANK_VALUE = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,'J':11,'Q':12,'K':13,'A':14};
+const SUITS = [{s:'s',sym:'♠',color:'black'},{s:'h',sym:'♥',color:'red'},{s:'d',sym:'♦',color:'red'},{s:'c',sym:'♣',color:'black'}];
+
+function makeDeck(){
+  const deck = [];
+  for (const r of RANKS) for (const su of SUITS) deck.push({rank:r, value:RANK_VALUE[r], suit:su.s, sym:su.sym, color:su.color, id:r+su.s});
+  return deck;
+}
+function shuffleDeck(deck){
+  const a = deck.slice();
+  for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function combinations(arr, k){
+  const out = [];
+  function rec(start, combo){
+    if (combo.length===k){ out.push(combo.slice()); return; }
+    for (let i=start;i<arr.length;i++){ combo.push(arr[i]); rec(i+1, combo); combo.pop(); }
+  }
+  rec(0, []);
+  return out;
+}
+function evaluate5High(cards){
+  const values = cards.map(c=>c.value).sort((a,b)=>b-a);
+  const suits = cards.map(c=>c.suit);
+  const isFlush = suits.every(s=>s===suits[0]);
+  const uniqVals = [...new Set(values)];
+  let straightHigh = null;
+  if (uniqVals.length===5){
+    if (uniqVals[0]-uniqVals[4]===4) straightHigh = uniqVals[0];
+    else if (uniqVals.join(',')==='14,5,4,3,2') straightHigh = 5;
+  }
+  const counts = {};
+  for (const v of values) counts[v]=(counts[v]||0)+1;
+  const groups = Object.entries(counts).map(([v,c])=>({v:Number(v),c})).sort((a,b)=> b.c-a.c || b.v-a.v);
+
+  if (straightHigh && isFlush) return [8, straightHigh];
+  if (groups[0].c===4) return [7, groups[0].v, groups[1].v];
+  if (groups[0].c===3 && groups[1] && groups[1].c===2) return [6, groups[0].v, groups[1].v];
+  if (isFlush) return [5, ...values];
+  if (straightHigh) return [4, straightHigh];
+  if (groups[0].c===3) return [3, groups[0].v, ...groups.slice(1).map(g=>g.v)];
+  if (groups[0].c===2 && groups[1] && groups[1].c===2){
+    const pairVals = [groups[0].v, groups[1].v].sort((a,b)=>b-a);
+    return [2, pairVals[0], pairVals[1], groups[2].v];
+  }
+  if (groups[0].c===2) return [1, groups[0].v, ...groups.slice(1).map(g=>g.v)];
+  return [0, ...values];
+}
+function compareScore(a, b){
+  for (let i=0;i<Math.max(a.length,b.length);i++){
+    const av = a[i]===undefined?-1:a[i], bv = b[i]===undefined?-1:b[i];
+    if (av!==bv) return av-bv;
+  }
+  return 0;
+}
+function rankValueName(v){ return v===14?'A':v===13?'K':v===12?'Q':v===11?'J':String(v); }
+function describeHigh(score){
+  const tier = score[0];
+  if (tier===8) return `Straight Flush, ${rankValueName(score[1])} high`;
+  if (tier===7) return `Four of a Kind, ${rankValueName(score[1])}s`;
+  if (tier===6) return `Full House, ${rankValueName(score[1])}s full of ${rankValueName(score[2])}s`;
+  if (tier===5) return `Flush, ${score.slice(1).map(rankValueName).join('-')} high`;
+  if (tier===4) return `Straight, ${rankValueName(score[1])} high`;
+  if (tier===3) return `Trips, ${rankValueName(score[1])}s`;
+  if (tier===2) return `Two Pair, ${rankValueName(score[1])}s and ${rankValueName(score[2])}s`;
+  if (tier===1) return `Pair of ${rankValueName(score[1])}s`;
+  return `High Card ${rankValueName(score[1])}`;
+}
+function evaluate5Low(cards){
+  const lowVals = cards.map(c => c.value===14 ? 1 : c.value);
+  for (const v of lowVals) if (v>8) return null;
+  if (new Set(lowVals).size!==5) return null;
+  return lowVals.slice().sort((a,b)=>b-a);
+}
+function compareLow(a, b){
+  for (let i=0;i<5;i++){ if (a[i]!==b[i]) return a[i]-b[i]; }
+  return 0;
+}
+function describeLow(lowVals){
+  if (!lowVals) return 'No qualifying low';
+  const sortedAsc = lowVals.slice().sort((a,b)=>a-b);
+  return sortedAsc.map(v=>v===1?'A':String(v)).join('-') + ' low';
+}
+function bestHighForHolePair(holePair, board5){
+  let best = null;
+  for (const b3 of combinations(board5, 3)){
+    const score = evaluate5High([...holePair, ...b3]);
+    if (!best || compareScore(score, best.score) > 0) best = {score, board: b3};
+  }
+  return best;
+}
+function bestLowForHolePair(holePair, board5){
+  let best = null;
+  for (const b3 of combinations(board5, 3)){
+    const low = evaluate5Low([...holePair, ...b3]);
+    if (low && (!best || compareLow(low, best.low) < 0)) best = {low, board: b3};
+  }
+  return best;
+}
+function pairKey(pair){ return pair.map(c=>c.id).sort().join(','); }
+function analyzeHand(hole5, board5){
+  const holePairs = combinations(hole5, 2);
+  let bestHigh = null, bestHighPairs = [];
+  let bestLow = null, bestLowPairs = [];
+  for (const hp of holePairs){
+    const h = bestHighForHolePair(hp, board5);
+    if (!bestHigh || compareScore(h.score, bestHigh) > 0){ bestHigh = h.score; bestHighPairs = [hp]; }
+    else if (compareScore(h.score, bestHigh) === 0){ bestHighPairs.push(hp); }
+
+    const l = bestLowForHolePair(hp, board5);
+    if (l){
+      if (!bestLow || compareLow(l.low, bestLow) < 0){ bestLow = l.low; bestLowPairs = [hp]; }
+      else if (compareLow(l.low, bestLow) === 0){ bestLowPairs.push(hp); }
+    }
+  }
+  return { bestHigh, bestHighPairs, bestLow, bestLowPairs };
+}
+
+/* ============================================================
+   TABLE + SEAT LAYOUT
+   ============================================================ */
+const SEAT_NAMES = ['A','B','C','D','E','F'];
+// Leaves a gap centered on the bottom of the oval for the dealer's own spot.
+function seatPositions(n){
+  const out=[];
+  const gap = 70;
+  const startAngle = 90 + gap/2;
+  const arcSpan = 360 - gap;
+  for(let i=0;i<n;i++){
+    const angleDeg = startAngle + (i+0.5)*(arcSpan/n);
+    const angle = angleDeg * Math.PI/180;
+    out.push({ x: 50 + 44*Math.cos(angle), y: 50 + 40*Math.sin(angle) });
+  }
+  return out;
+}
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+/* ============================================================
+   APP STATE
+   ============================================================ */
+let state = { score:{correct:0,total:0}, streak:0, table:null };
+
+function dealTable(){
+  const playerCount = 3 + Math.floor(Math.random()*4); // 3-6 players
+  const deck = shuffleDeck(makeDeck());
+  const board5 = deck.slice(0,5);
+  const seats = [];
+  for (let i=0;i<playerCount;i++){
+    const hole5 = deck.slice(5+i*5, 5+i*5+5);
+    seats.push({
+      name: SEAT_NAMES[i],
+      hole5,
+      analysis: analyzeHand(hole5, board5),
+      selHigh: [], selLow: [],
+    });
+  }
+  state.table = {
+    board5, seats, phase:'high',
+    noLowDeclared: false,
+    highResult: null, lowResult: null,
+  };
+  render();
+}
+
+function scoreAttempt(correct){
+  state.score.total++;
+  if (correct){ state.score.correct++; state.streak++; } else { state.streak = 0; }
+}
+
+function sameSet(a, b){
+  if (a.length!==b.length) return false;
+  const bs = new Set(b);
+  return a.every(x=>bs.has(x));
+}
+
+// Best high across the whole table: every seat's own best-possible high, compared against each other.
+function trueHighWinners(seats){
+  let best = null, winners = [];
+  seats.forEach(s=>{
+    const score = s.analysis.bestHigh;
+    if (!best || compareScore(score, best) > 0){ best = score; winners = [s.name]; }
+    else if (compareScore(score, best) === 0){ winners.push(s.name); }
+  });
+  return { best, winners };
+}
+// Best low across the table, only among seats that have a qualifying low at all.
+// Empty winners array means no seat at the table has a qualifying low.
+function trueLowWinners(seats){
+  let best = null, winners = [];
+  seats.forEach(s=>{
+    if (!s.analysis.bestLow) return;
+    if (!best || compareLow(s.analysis.bestLow, best) < 0){ best = s.analysis.bestLow; winners = [s.name]; }
+    else if (compareLow(s.analysis.bestLow, best) === 0){ winners.push(s.name); }
+  });
+  return { best, winners };
+}
+
+// The full correct answer for each winning seat: which 2 cards, and what hand it makes.
+// Used to show "here's what it actually was" whenever the trainer's pick doesn't match.
+function describeAnswer(seats, winnerNames, kind){
+  return winnerNames.map(name=>{
+    const seat = seats.find(s=>s.name===name);
+    const pair = kind==='high' ? seat.analysis.bestHighPairs[0] : seat.analysis.bestLowPairs[0];
+    const desc = kind==='high' ? describeHigh(seat.analysis.bestHigh) : describeLow(seat.analysis.bestLow);
+    return { seatName:name, cards:pair, cardLabel: pair.map(c=>c.rank+c.sym).join(' '), desc };
+  });
+}
+
+function findSeatForCard(cardId){
+  return state.table.seats.find(s=>s.hole5.some(c=>c.id===cardId));
+}
+
+// Selecting a card toggles it within that seat's own 2-card slate (max 2 per seat, oldest
+// bumped out on a 3rd click) — independent of every other seat's selections.
+function toggleCard(card){
+  const t = state.table;
+  if (t.phase!=='high' && t.phase!=='low') return;
+  if (t.phase==='low' && t.noLowDeclared) return;
+  const seat = findSeatForCard(card.id);
+  const key = t.phase==='high' ? 'selHigh' : 'selLow';
+  const sel = seat[key];
+  const idx = sel.findIndex(c=>c.id===card.id);
+  if (idx>=0){ sel.splice(idx,1); }
+  else {
+    if (sel.length>=2) sel.shift();
+    sel.push(card);
+  }
+  render();
+}
+
+function toggleNoLowTable(){
+  const t = state.table;
+  t.noLowDeclared = !t.noLowDeclared;
+  if (t.noLowDeclared) t.seats.forEach(s=>{ s.selLow = []; });
+  render();
+}
+
+// Ready to lock when every seat has either 0 or exactly 2 cards picked (no dangling single
+// picks) and at least one seat has 2.
+function readyToLock(key){
+  const t = state.table;
+  const anyFull = t.seats.some(s=>s[key].length===2);
+  const noneDangling = t.seats.every(s=>s[key].length===0 || s[key].length===2);
+  return anyFull && noneDangling;
+}
+
+function lockHighWinners(){
+  const t = state.table;
+  if (!readyToLock('selHigh')) return;
+  const { winners } = trueHighWinners(t.seats);
+  const pickedSeats = t.seats.filter(s=>s.selHigh.length===2);
+  const pickedNames = pickedSeats.map(s=>s.name);
+  const setMatch = sameSet(pickedNames, winners);
+  const allPairsValid = pickedSeats.every(s=>s.analysis.bestHighPairs.some(p=>pairKey(p)===pairKey(s.selHigh)));
+  const correct = setMatch && allPairsValid;
+  scoreAttempt(correct);
+  t.highResult = {
+    correct, trueWinners: winners, pickedNames,
+    perSeat: Object.fromEntries(pickedSeats.map(s=>[s.name, s.analysis.bestHighPairs.some(p=>pairKey(p)===pairKey(s.selHigh))])),
+    answer: describeAnswer(t.seats, winners, 'high'),
+  };
+  t.phase = 'high-review';
+  render();
+}
+
+function proceedToLow(){
+  const t = state.table;
+  t.seats.forEach(s=>{ s.selLow = []; });
+  t.noLowDeclared = false;
+  t.phase = 'low';
+  render();
+}
+
+function lockLowWinners(){
+  const t = state.table;
+  if (!t.noLowDeclared && !readyToLock('selLow')) return;
+  const { winners } = trueLowWinners(t.seats);
+  const pickedSeats = t.noLowDeclared ? [] : t.seats.filter(s=>s.selLow.length===2);
+  const pickedNames = pickedSeats.map(s=>s.name);
+  const setMatch = t.noLowDeclared ? winners.length===0 : sameSet(pickedNames, winners);
+  const allPairsValid = pickedSeats.every(s=>s.analysis.bestLowPairs.some(p=>pairKey(p)===pairKey(s.selLow)));
+  const correct = setMatch && allPairsValid;
+  scoreAttempt(correct);
+  t.lowResult = {
+    correct, trueWinners: winners, pickedNames, noLowDeclared: t.noLowDeclared,
+    perSeat: Object.fromEntries(pickedSeats.map(s=>[s.name, s.analysis.bestLowPairs.some(p=>pairKey(p)===pairKey(s.selLow))])),
+    answer: describeAnswer(t.seats, winners, 'low'),
+  };
+  t.phase = 'done';
+  render();
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  document.getElementById('statAccuracy').textContent = state.score.total ? Math.round(100*state.score.correct/state.score.total)+'%' : '0%';
+  document.getElementById('statStreak').textContent = state.streak;
+  const app = document.getElementById('app');
+  app.innerHTML = state.table ? renderTable() : renderStart();
+  bind();
+}
+
+function renderStart(){
+  return `<div class="card">
+    <p class="section-label">Get started</p>
+    <h2>Deal a table</h2>
+    <p class="muted">3 to 6 players, one shared board, all hands live at showdown. Look over every hand, decide who wins the High, lock it in — then do the same for the Low.</p>
+    <div class="row-actions"><button class="primary-btn" id="dealBtn">Deal a table</button></div>
+  </div>`;
+}
+
+function cardHtml(card, opts={}){
+  const cls = ['pcard'];
+  if (opts.board) cls.push('board');
+  if (opts.seat) cls.push('seat');
+  if (opts.selectable) cls.push('selectable');
+  if (opts.selected) cls.push('selected');
+  if (opts.dim) cls.push('dim');
+  if (opts.truth) cls.push('truth');
+  return `<div class="${cls.join(' ')} ${card.color}" data-card-id="${card.id}">
+    <div class="rank">${card.rank}</div><div class="suit">${card.sym}</div>
+  </div>`;
+}
+
+
+function renderTable(){
+  const t = state.table;
+  const positions = seatPositions(t.seats.length);
+
+  const seatsHtml = t.seats.map((seat,i)=>{
+    const pos = positions[i];
+    const cardsHtml = seat.hole5.map(c=>cardHtml(c, seatCardOpts(seat, c, t))).join('');
+    const extraHtml = seatExtraHtml(seat, t);
+    return `<div class="seat" style="left:${pos.x}%;top:${pos.y}%;">
+      <div class="avatar">${seat.name}</div>
+      <div class="seat-cards">${cardsHtml}</div>
+      ${extraHtml}
+    </div>`;
+  }).join('');
+
+  const boardHtml = t.board5.map(c=>cardHtml(c,{board:true})).join('');
+
+  const stageHtml = `<div class="table-stage">
+    ${seatsHtml}
+    <div class="board-center">
+      <div class="board-label">Board</div>
+      <div class="board-row">${boardHtml}</div>
+    </div>
+  </div>`;
+
+  const phaseLabel = {
+    high:'Click the 2 cards that win the High',
+    'high-review':'High result',
+    low:'Click the 2 cards that win the Low',
+    done:'Table complete',
+  }[t.phase];
+
+  let controlsHtml = '';
+  if (t.phase==='high'){
+    controlsHtml = `<p class="hint-text">Click exactly 2 cards in whichever hand(s) you think win — more than one hand if it's a tie.</p>
+      <div class="row-actions"><button class="primary-btn" id="lockHighBtn" ${readyToLock('selHigh')?'':'disabled'}>Lock in High</button></div>`;
+  } else if (t.phase==='high-review'){
+    const r = t.highResult;
+    controlsHtml = `<div class="feedback ${r.correct?'good':'bad'}">
+        <strong>${r.correct?'Correct.':'Not quite.'}</strong>
+        <div class="detail">You picked: ${r.pickedNames.length ? r.pickedNames.map(n=>'Seat '+n).join(', ') : '—'}</div>
+        ${r.correct ? '' : `<div class="detail">Correct answer:<br>${r.answer.map(a=>`Seat ${a.seatName} — ${a.cardLabel} (${a.desc})`).join('<br>')}</div>`}
+      </div>
+      <div class="row-actions"><button class="primary-btn" id="toLowBtn">Continue to Low</button></div>`;
+  } else if (t.phase==='low'){
+    controlsHtml = `<p class="hint-text">${t.noLowDeclared ? 'Declared: no qualifying low at this table.' : 'Click exactly 2 cards in whichever hand(s) win the low — or declare no low.'}</p>
+      <div class="row-actions">
+        <button class="primary-btn" id="lockLowBtn" ${(t.noLowDeclared || readyToLock('selLow'))?'':'disabled'}>Lock in Low</button>
+        <button class="ghost-btn" id="noLowTableBtn" style="${t.noLowDeclared?'border-color:var(--brass);color:var(--brass-bright);':''}">No Qualifying Low At This Table</button>
+      </div>`;
+  } else if (t.phase==='done'){
+    const r = t.lowResult, hr = t.highResult;
+    const lowAnswerLine = r.trueWinners.length
+      ? `Correct answer:<br>${r.answer.map(a=>`Seat ${a.seatName} — ${a.cardLabel} (${a.desc})`).join('<br>')}`
+      : 'Correct answer: No qualifying low at this table';
+    controlsHtml = `<div class="feedback ${r.correct?'good':'bad'}" style="margin-bottom:14px;">
+        <strong>Low: ${r.correct?'Correct.':'Not quite.'}</strong>
+        <div class="detail">You picked: ${r.noLowDeclared ? 'No Low' : (r.pickedNames.length ? r.pickedNames.map(n=>'Seat '+n).join(', ') : '—')}</div>
+        ${r.correct ? '' : `<div class="detail">${lowAnswerLine}</div>`}
+      </div>
+      <div class="summary-box" style="margin-bottom:14px;">
+        <div class="total">${hr.correct?'✓':'✗'} High &nbsp; ${r.correct?'✓':'✗'} Low</div>
+        ${(!hr.correct) ? `<div class="summary-list">High answer:<br>${hr.answer.map(a=>`Seat ${a.seatName} — ${a.cardLabel} (${a.desc})`).join('<br>')}</div>` : ''}
+      </div>
+      <div class="row-actions"><button class="primary-btn" id="nextTableBtn">Deal next table</button></div>`;
+  }
+
+  return `<div class="card">
+    <div class="badge-row">
+      <span class="badge">${t.seats.length} players</span>
+      <span class="badge accent">${phaseLabel}</span>
+    </div>
+    ${stageHtml}
+    <div class="step-panel">
+      ${controlsHtml}
+    </div>
+  </div>`;
+}
+
+// Which visual state a given card should render in, depending on the current phase.
+function seatCardOpts(seat, card, t){
+  if (t.phase==='high') return { selectable:true, selected: seat.selHigh.some(c=>c.id===card.id) };
+  if (t.phase==='low') return { selectable: !t.noLowDeclared, selected: seat.selLow.some(c=>c.id===card.id), dim: t.noLowDeclared };
+  if (t.phase==='high-review' && !t.highResult.correct){
+    const ans = t.highResult.answer.find(a=>a.seatName===seat.name);
+    if (ans && ans.cards.some(c=>c.id===card.id)) return { truth:true };
+  }
+  if (t.phase==='done' && !t.lowResult.correct){
+    const ans = t.lowResult.answer.find(a=>a.seatName===seat.name);
+    if (ans && ans.cards.some(c=>c.id===card.id)) return { truth:true };
+  }
+  return {};
+}
+
+// Whatever sits under a seat's cards once locked: a small correctness tag.
+function seatExtraHtml(seat, t){
+  if (t.phase==='high-review'){
+    const picked = seat.selHigh.length===2 && t.highResult.pickedNames.includes(seat.name);
+    const truth = t.highResult.trueWinners.includes(seat.name);
+    if (truth && picked) return `<span class="tag-ok">✓ correct</span>`;
+    if (truth && !picked) return `<span class="tag-bad">missed — wins High</span>`;
+    if (!truth && picked) return `<span class="tag-bad">✗ doesn't win</span>`;
+    return '';
+  }
+  if (t.phase==='done'){
+    const pickedH = t.highResult.pickedNames.includes(seat.name), truthH = t.highResult.trueWinners.includes(seat.name);
+    const pickedL = t.lowResult.pickedNames.includes(seat.name), truthL = t.lowResult.trueWinners.includes(seat.name);
+    const hTag = truthH ? (pickedH?'<span class="tag-ok">✓ High</span>':'<span class="tag-bad">missed High</span>') : (pickedH?'<span class="tag-bad">✗ High</span>':'');
+    const lTag = truthL ? (pickedL?'<span class="tag-ok">✓ Low</span>':'<span class="tag-bad">missed Low</span>') : (pickedL?'<span class="tag-bad">✗ Low</span>':'');
+    return `<div class="seat-tags">${hTag}${lTag}</div>`;
+  }
+  return '';
+}
+
+function bind(){
+  const dealBtn = document.getElementById('dealBtn');
+  if (dealBtn) dealBtn.onclick = dealTable;
+
+  document.querySelectorAll('.pcard.selectable').forEach(el=>{
+    el.onclick = ()=>{
+      const card = findSeatForCard(el.dataset.cardId).hole5.find(c=>c.id===el.dataset.cardId);
+      toggleCard(card);
+    };
+  });
+  const noLowTableBtn = document.getElementById('noLowTableBtn');
+  if (noLowTableBtn) noLowTableBtn.onclick = toggleNoLowTable;
+  const lockHighBtn = document.getElementById('lockHighBtn');
+  if (lockHighBtn) lockHighBtn.onclick = lockHighWinners;
+  const toLowBtn = document.getElementById('toLowBtn');
+  if (toLowBtn) toLowBtn.onclick = proceedToLow;
+  const lockLowBtn = document.getElementById('lockLowBtn');
+  if (lockLowBtn) lockLowBtn.onclick = lockLowWinners;
+  const nextTableBtn = document.getElementById('nextTableBtn');
+  if (nextTableBtn) nextTableBtn.onclick = dealTable;
+}
+
+render();
+</script>
+</body>
+</html>

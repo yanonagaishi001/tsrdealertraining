@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dealer Training Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-page:#0a0e12;
+    --bg-panel:#151b20;
+    --line:#2b333a;
+    --cream:#f3ecd9;
+    --cream-dim:#a8b0b6;
+    --gold:#e2bb3f;
+    --teal:#3f8f8f;
+    --rake-accent:#e7b84d;
+    --bigo-accent:#c98a3c;
+    --plo-accent:#e5566a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% -10%, rgba(255,255,255,.05), transparent 40%),
+      radial-gradient(circle at 100% 10%, rgba(255,255,255,.04), transparent 45%),
+      var(--bg-page);
+    color:var(--cream);
+    font-family:'Inter',system-ui,sans-serif;
+  }
+  body.home{
+    padding:60px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .wrap{max-width:1180px;width:100%;}
+  .hero{text-align:center;margin-bottom:48px;}
+  .eyebrow{font-family:'Roboto Mono',monospace;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin:0 0 14px;}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,5vw,48px);margin:0 0 14px;letter-spacing:.01em;}
+  .sub{color:var(--cream-dim);font-size:15px;max-width:520px;margin:0 auto;line-height:1.6;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;}
+  @media (max-width:940px){ .grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:640px){ .grid{grid-template-columns:1fr;} }
+
+  .tile{
+    display:block;text-decoration:none;color:inherit;
+    background:var(--bg-panel);border:1.5px solid var(--line);border-radius:18px;
+    padding:32px 28px;position:relative;overflow:hidden;
+    transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .tile:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(0,0,0,.45);}
+  .tile::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:4px;
+  }
+  .tile.rake::before{background:linear-gradient(90deg,var(--rake-accent),#7a2331,var(--rake-accent));}
+  .tile.bigo::before{background:linear-gradient(90deg,var(--bigo-accent),var(--teal),var(--bigo-accent));}
+  .tile.plo::before{background:linear-gradient(90deg,var(--plo-accent),#4a90d9,var(--plo-accent));}
+  .tile:hover.rake{border-color:var(--rake-accent);}
+  .tile:hover.bigo{border-color:var(--bigo-accent);}
+  .tile:hover.plo{border-color:var(--plo-accent);}
+
+  .tile-icon{
+    width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-family:'Roboto Mono',monospace;font-weight:700;font-size:20px;margin-bottom:20px;
+    border:2px solid currentColor;
+  }
+  .tile.rake .tile-icon{color:var(--rake-accent);}
+  .tile.bigo .tile-icon{color:var(--bigo-accent);}
+  .tile.plo .tile-icon{color:var(--plo-accent);}
+
+  .tile h2{font-family:'Fraunces',serif;font-weight:600;font-size:23px;margin:0 0 10px;color:var(--cream);}
+  .tile p{font-size:13.5px;color:var(--cream-dim);line-height:1.6;margin:0 0 20px;}
+  .tile-tags{display:flex;gap:8px;flex-wrap:wrap;}
+  .tile-tag{
+    font-family:'Roboto Mono',monospace;font-size:10.5px;letter-spacing:.04em;
+    padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--cream-dim);
+  }
+  .tile-go{
+    margin-top:22px;display:flex;align-items:center;gap:6px;font-family:'Roboto Mono',monospace;
+    font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .tile.rake .tile-go{color:var(--rake-accent);}
+  .tile.bigo .tile-go{color:var(--bigo-accent);}
+  .tile.plo .tile-go{color:var(--plo-accent);}
+  .tile-go .arrow{transition:transform .18s ease;}
+  .tile:hover .tile-go .arrow{transform:translateX(4px);}
+
+  footer{text-align:center;color:var(--cream-dim);font-size:12px;margin-top:40px;opacity:.6;}
+
+  .tile{cursor:pointer;border:1.5px solid var(--line);}
+  .tile:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+
+  /* in-page tool view */
+  #toolView{display:none;flex-direction:column;min-height:100vh;}
+  #toolView.open{display:flex;}
+  .tool-topbar{
+    display:flex;align-items:center;gap:14px;padding:14px 20px;
+    background:var(--bg-panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;
+  }
+  .back-btn{
+    background:transparent;border:1.5px solid var(--line);color:var(--cream);
+    padding:8px 14px;border-radius:8px;font-family:'Roboto Mono',monospace;font-size:12.5px;
+    cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s;
+  }
+  .back-btn:hover{border-color:var(--gold);}
+  .tool-topbar .tool-name{font-family:'Fraunces',serif;font-size:16px;color:var(--cream-dim);}
+  #toolFrame{flex:1;width:100%;border:none;display:block;background:var(--bg-page);}
+</style>
+</head>
+<body class="home" id="pageBody">
+<div class="wrap" id="homeView">
+  <div class="hero">
+    <p class="eyebrow">Talking Stick Poker Arena</p>
+    <h1>Dealer Training Hub</h1>
+    <p class="sub">Pick what you want to work on. Every trainer tracks your accuracy and streak as you go.</p>
+  </div>
+
+  <div class="grid">
+    <div class="tile rake" data-src="rake_trainer.html" data-name="Rake Practice" tabindex="0" role="button">
+      <div class="tile-icon">$</div>
+      <h2>Rake Practice</h2>
+      <p>Watch a hand play out at the table, then call the House and Jackpot rake yourself — right amount, right side, right moment. Covers every spread in the room, reduced rake for short-handed tables, and kill pots on the Limit games.</p>
+      <div class="tile-tags">
+        <span class="tile-tag">NLH · PLO · Limit</span>
+        <span class="tile-tag">Kill pots</span>
+      </div>
+      <div class="tile-go">Start rake practice <span class="arrow">→</span></div>
+    </div>
+
+    <div class="tile bigo" data-src="bigo_hand_reader.html" data-name="Big-O Hand Reading" tabindex="0" role="button">
+      <div class="tile-icon">O</div>
+      <h2>Big-O Hand Reading</h2>
+      <p>A full table of live hands. Click the two cards that make the winning High, then the winning Low — ties and chops included, with the correct answer shown if you miss it.</p>
+      <div class="tile-tags">
+        <span class="tile-tag">5-Card Omaha</span>
+        <span class="tile-tag">Hi-Lo</span>
+      </div>
+      <div class="tile-go">Start hand reading <span class="arrow">→</span></div>
+    </div>
+
+    <div class="tile plo" data-src="plo_pot_trainer.html" data-name="PLO Pot Training" tabindex="0" role="button">
+      <div class="tile-icon">P</div>
+      <h2>PLO Pot Training</h2>
+      <p>Watch the action unfold at an 8-handed table and call the correct pot-limit amount on demand — preflop, on the flop, or across a whole hand, with straddles and double straddles in the mix.</p>
+      <div class="tile-tags">
+        <span class="tile-tag">Pot-Limit Omaha</span>
+        <span class="tile-tag">Pot-size calls</span>
+      </div>
+      <div class="tile-go">Start pot training <span class="arrow">→</span></div>
+    </div>
+  </div>
+
+  <footer>Built for internal dealer training</footer>
+</div>
+
+<div id="toolView">
+  <div class="tool-topbar">
+    <button class="back-btn" id="backBtn">← All trainers</button>
+    <span class="tool-name" id="toolName"></span>
+  </div>
+  <iframe id="toolFrame" title="Trainer"></iframe>
+</div>
+
+<script>
+  const body = document.getElementById('pageBody');
+  const homeView = document.getElementById('homeView');
+  const toolView = document.getElementById('toolView');
+  const toolFrame = document.getElementById('toolFrame');
+  const toolName = document.getElementById('toolName');
+
+  function openTool(src, name, pushState){
+    toolFrame.src = src;
+    toolName.textContent = name;
+    body.classList.remove('home');
+    homeView.style.display = 'none';
+    toolView.classList.add('open');
+    if (pushState !== false) history.pushState({tool:src}, '', '#'+src);
+  }
+  function closeTool(pushState){
+    toolFrame.src = 'about:blank';
+    body.classList.add('home');
+    homeView.style.display = '';
+    toolView.classList.remove('open');
+    if (pushState !== false) history.pushState({}, '', location.pathname);
+  }
+
+  document.querySelectorAll('.tile').forEach(el=>{
+    el.addEventListener('click', ()=> openTool(el.dataset.src, el.dataset.name));
+    el.addEventListener('keydown', (e)=>{
+      if (e.key==='Enter' || e.key===' '){ e.preventDefault(); openTool(el.dataset.src, el.dataset.name); }
+    });
+  });
+  document.getElementById('backBtn').onclick = ()=> closeTool();
+
+  window.addEventListener('popstate', (e)=>{
+    if (e.state && e.state.tool){ openTool(e.state.tool, '', false); }
+    else { closeTool(false); }
+  });
+
+  // deep-link support: opening index.html#rake_trainer.html jumps straight into that tool
+  if (location.hash){
+    const src = decodeURIComponent(location.hash.slice(1));
+    const tile = document.querySelector(`.tile[data-src="${src}"]`);
+    if (tile) openTool(src, tile.dataset.name, false);
+  }
+</script>
+</body>
+</html>
